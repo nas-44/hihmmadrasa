@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - HIHSM</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* Navigation & UI */
+        .nav-item { transition: all 0.2s; border-left: 4px solid transparent; }
+        .nav-item:hover { background-color: #f1f5f9; }
+        .nav-item.active { background-color: #eff6ff; color: #1e40af; border-left-color: #1e40af; font-weight: 600; }
+        
+        /* Animations */
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Glassmorphism for Login */
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.5); }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-slate-800 h-screen overflow-hidden">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <div id="login-view" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-slate-200">
+        <div class="glass-card p-10 rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-900 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg"><i class="fas fa-user-shield"></i></div>
+                <h2 class="text-2xl font-bold text-slate-900">Admin Portal</h2>
+                <p class="text-xs text-slate-500 mt-2">System Management Access</p>
+            </div>
+            <form onsubmit="adminLogin(event)" class="space-y-4">
+                <input id="adm-email" class="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Email" value="admin@school.com">
+                <input id="adm-pass" type="password" class="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Password" value="admin123">
+                <button class="w-full bg-blue-900 text-white py-3 rounded-lg font-bold hover:bg-blue-800 transition shadow-md hover:shadow-lg">Secure Login</button>
+            </form>
+            <div class="mt-8 flex justify-between items-center text-xs text-slate-400">
+                <a href="index.html" class="hover:text-blue-600 flex items-center gap-1"><i class="fas fa-arrow-left"></i> Website</a>
+                <button onclick="hardReset()" class="hover:text-red-500 underline">Factory Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dash-view" class="hidden flex h-screen">
+        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col shadow-xl z-20">
+            <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-900 rounded flex items-center justify-center text-white font-bold text-sm">HI</div>
+                <h2 class="font-bold text-slate-800 text-lg">Control Panel</h2>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <button onclick="showTab('home')" id="nav-home" class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-chart-pie w-5 text-center"></i> Overview</button>
+                <button onclick="showTab('cms')" id="nav-cms" class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-globe w-5 text-center"></i> Website CMS</button>
+                <button onclick="showTab('results')" id="nav-results" class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-file-signature w-5 text-center"></i> Result Approval</button>
+                
+                <div class="mt-6 mb-2 px-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Academic</div>
+                <button onclick="showTab('teachers')" id="nav-teachers" class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-chalkboard-teacher w-5 text-center"></i> Teachers</button>
+                <button onclick="showTab('classes')" id="nav-classes" class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-school w-5 text-center"></i> Classes</button>
+                <button onclick="showTab('students')" id="nav-students" class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-user-graduate w-5 text-center"></i> Students</button>
+                
+                <!-- NEW FINANCE SECTION -->
+                <div class="mt-6 mb-2 px-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Finance</div>
+                <a href="subscription.html" class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-600 font-medium flex items-center gap-3 hover:text-blue-700"><i class="fas fa-file-invoice-dollar w-5 text-center"></i> Varisanghya</a>
+
+                <div class="mt-6 mb-2 px-4 text-xs font-bold text-slate-400 uppercase tracking-widest">System</div>
+                <button onclick="showTab('profile')" id="nav-profile" class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-user-shield w-5 text-center"></i> Admin Profile</button>
+            </nav>
+            
+            <div class="p-4 border-t border-slate-100">
+                <button onclick="logout()" class="w-full text-left px-4 py-2 text-red-500 font-bold hover:bg-red-50 rounded-lg transition flex items-center gap-2"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+            <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm z-10">
+                <h1 id="page-title" class="text-xl font-bold text-slate-800">Overview</h1>
+                <div class="flex items-center gap-3">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">System Online</span>
+                </div>
+            </header>
+            <div id="content-area" class="flex-1 overflow-y-auto p-8 fade-in pb-24"></div>
+        </main>
+    </div>
+
+    <div id="modal-sub" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Manage Subjects</h3>
+                <button onclick="document.getElementById('modal-sub').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-1 block">Subject List</label>
+                    <div id="sub-list" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar border rounded-lg p-2 bg-slate-50"></div>
+                </div>
+                
+                <div class="pt-4 border-t border-slate-100">
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Add New Subject</label>
+                    <div class="flex gap-2">
+                        <input id="new-sub" placeholder="Name (e.g. English)" class="border p-2 rounded-lg flex-1 text-sm focus:ring-2 focus:ring-blue-100 outline-none">
+                        <input id="new-sub-pass" type="number" placeholder="Pass Mark" class="border p-2 rounded-lg w-24 text-sm focus:ring-2 focus:ring-blue-100 outline-none">
+                        <button onclick="addSubject()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 shadow-md">Add</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="active-cid">
+        </div>
+    </div>
+
+    <script>
+        const DB_KEY = 'hihsm_data_ultimate';
+        let editMode = null;
+        let lastPassMark = localStorage.getItem('hihsm_last_pass') || 35;
+
+        // --- 1. CORE DATABASE (Self-Healing) ---
+        function getDB() {
+            let data; 
+            try { data = JSON.parse(localStorage.getItem(DB_KEY)); } catch(e) { data = null; }
+            
+            if(!data) data = {};
+            // Ensure Arrays exist
+            ['teachers', 'classes', 'students', 'subjects', 'results'].forEach(k => { if(!data[k]) data[k] = []; });
+            // Ensure Admin
+            if(!data.admin) data.admin = { email: 'admin@school.com', pass: 'admin123' };
+            // Ensure Website CMS Data
+            if(!data.website) {
+                data.website = {
+                    notifications: [{id:'n1', text:"Welcome to the new portal!", link:"#contact", date: new Date().toLocaleDateString()}],
+                    hero: { badge: "Admissions Open", title: "Empowering <br>Future Leaders", desc: "A legacy of excellence combining modern academic rigor with timeless moral values." },
+                    about: {
+                        title: "A Tradition of Excellence",
+                        desc: "We believe education is more than just grades. It's about building character.",
+                        features: [
+                            {title:"Holistic Curriculum", text:"Blending state syllabus with moral studies."},
+                            {title:"Modern Facilities", text:"Smart classrooms & advanced labs."},
+                            {title:"Moral Environment", text:"Nurturing campus culture."}
+                        ]
+                    },
+                    stats: { students: 1200, faculty: 50, years: 35, pass: 100 },
+                    contact: { address: "Malappuram, Kerala", phone: "+91 98765 43210", email: "info@hihsm.com", mapUrl: "" },
+                    faculty: [], achievements: [], gallery: []
+                };
+                localStorage.setItem(DB_KEY, JSON.stringify(data));
+            }
+            return data;
+        }
+
+        function saveDB(d) { localStorage.setItem(DB_KEY, JSON.stringify(d)); }
+        function genId() { return Math.random().toString(36).substr(2, 9); }
+        function showToast(msg) {
+            const el = document.createElement('div');
+            el.className = 'p-4 bg-slate-800 text-white rounded-lg fixed top-5 right-5 shadow-2xl z-50 flex items-center gap-3 animate-bounce';
+            el.innerHTML = `<i class="fas fa-check-circle text-green-400"></i> <span class="font-bold text-sm">${msg}</span>`;
+            document.getElementById('toast-container').appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+        function el(id) { return document.getElementById(id); }
+
+        // --- 2. AUTHENTICATION ---
+        function adminLogin(e) {
+            e.preventDefault();
+            const db = getDB();
+            if(el('adm-email').value === db.admin.email && el('adm-pass').value === db.admin.pass) {
+                el('login-view').classList.add('hidden');
+                el('dash-view').classList.remove('hidden');
+                showTab('home');
+            } else alert('Invalid Credentials');
+        }
+        function logout() { location.reload(); }
+        function hardReset() { if(confirm("Factory Reset? All data will be wiped.")) { localStorage.removeItem(DB_KEY); location.reload(); } }
+
+        // --- 3. TAB NAVIGATION & RENDERING ---
+        function showTab(tab) {
+            const db = getDB();
+            const area = el('content-area');
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            if(el('nav-'+tab)) el('nav-'+tab).classList.add('active');
+            el('page-title').innerText = tab === 'cms' ? "Website CMS" : tab.charAt(0).toUpperCase() + tab.slice(1);
+            editMode = null;
+
+            // HOME
+            if(tab === 'home') {
+                area.innerHTML = `
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl border-l-4 border-blue-600 shadow-sm flex justify-between items-center"><div><div class="text-4xl font-bold text-slate-800">${db.teachers.length}</div><div class="text-slate-500 text-xs font-bold uppercase tracking-wider">Teachers</div></div><div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl"><i class="fas fa-chalkboard-teacher"></i></div></div>
+                    <div class="bg-white p-6 rounded-xl border-l-4 border-green-600 shadow-sm flex justify-between items-center"><div><div class="text-4xl font-bold text-slate-800">${db.classes.length}</div><div class="text-slate-500 text-xs font-bold uppercase tracking-wider">Classes</div></div><div class="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center text-xl"><i class="fas fa-school"></i></div></div>
+                    <div class="bg-white p-6 rounded-xl border-l-4 border-purple-600 shadow-sm flex justify-between items-center"><div><div class="text-4xl font-bold text-slate-800">${db.students.length}</div><div class="text-slate-500 text-xs font-bold uppercase tracking-wider">Students</div></div><div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center text-xl"><i class="fas fa-user-graduate"></i></div></div>
+                </div>`;
+            }
+
+            // RESULTS & APPROVAL
+            else if(tab === 'results') {
+                const pending = db.results.filter(r => !r.isPublished);
+                const grouped = pending.reduce((acc, r) => {
+                    const key = r.examName + '|' + r.classId;
+                    if(!acc[key]) acc[key] = { name: r.examName, classId: r.classId, count: 0, date: r.date };
+                    acc[key].count++; return acc;
+                }, {});
+                const cOpts = db.classes.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+
+                area.innerHTML = `
+                <div class="space-y-8 max-w-5xl">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-yellow-500">
+                        <h3 class="font-bold text-lg mb-4 text-yellow-700 flex items-center gap-2"><i class="fas fa-clipboard-check"></i> Pending Approvals</h3>
+                        ${Object.keys(grouped).length === 0 ? '<p class="text-gray-400 text-sm italic">No pending results from teachers.</p>' : 
+                        `<div class="space-y-3">${Object.entries(grouped).map(([k, v]) => {
+                            const cName = db.classes.find(c=>c.id===v.classId)?.name || 'Unknown';
+                            return `<div class="flex justify-between items-center p-4 bg-yellow-50 border border-yellow-100 rounded-lg shadow-sm">
+                                <div><span class="font-bold text-gray-800 text-lg block">${v.name}</span> <span class="text-xs text-gray-500 font-mono">${v.date}</span> <span class="text-sm text-gray-600 ml-2">Class: <b>${cName}</b></span> <span class="text-xs bg-white px-2 py-1 rounded border ml-2">${v.count} Students</span></div>
+                                <button onclick="approveResults('${v.name}', '${v.classId}')" class="bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-green-700 shadow-md transition">Approve & Publish</button>
+                            </div>`;
+                        }).join('')}</div>`}
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow border-t-4 border-blue-600">
+                        <h3 class="font-bold text-lg mb-4 text-blue-800 flex items-center gap-2"><i class="fas fa-keyboard"></i> Direct Mark Entry</h3>
+                        <div class="flex gap-4 mb-4 bg-blue-50 p-4 rounded-lg">
+                            <select id="mk-cid" class="border p-2 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-200 outline-none">${cOpts}</select>
+                            <input id="mk-ename" placeholder="Exam Name (e.g. Final)" class="border p-2 rounded-lg flex-1 text-sm focus:ring-2 focus:ring-blue-200 outline-none">
+                            <button onclick="loadSheet()" class="bg-blue-600 text-white px-6 rounded-lg font-bold text-sm hover:bg-blue-700 shadow">Load Sheet</button>
+                        </div>
+                        <div id="sheet-area" class="overflow-x-auto"></div>
+                    </div>
+                </div>`;
+            }
+            
+            // CMS (Full Website Editor)
+            else if(tab === 'cms') {
+                const w = db.website;
+                const notifs = w.notifications || [];
+                const feats = w.about.features || [];
+                area.innerHTML = `
+                <div class="space-y-8 max-w-5xl pb-12">
+                    <div class="flex justify-between items-center">
+                         <h3 class="font-bold text-xl text-slate-700">Content Management</h3>
+                         <button onclick="clearCMS()" class="text-xs text-red-500 underline hover:text-red-700 font-bold">Reset CMS Data</button>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-blue-600">
+                        <h3 class="font-bold mb-4 text-blue-800 flex items-center gap-2"><i class="fas fa-bullhorn"></i> Notification Center</h3>
+                        <div class="flex gap-2 mb-4 bg-blue-50 p-3 rounded-lg">
+                            <input id="nf-txt" placeholder="Announcement Message" class="border p-2 rounded flex-1 text-sm focus:ring-2 focus:ring-blue-100 outline-none">
+                            <input id="nf-lnk" placeholder="Link (Optional)" class="border p-2 rounded w-1/3 text-sm focus:ring-2 focus:ring-blue-100 outline-none">
+                            <button onclick="addNotif()" class="bg-blue-600 text-white px-6 rounded font-bold text-sm hover:bg-blue-700">Post</button>
+                        </div>
+                        <div class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                            ${notifs.length ? notifs.map((n,i)=>`<div class="flex justify-between items-center p-3 border rounded bg-white hover:shadow-sm transition"><div><p class="font-bold text-sm text-slate-800">${n.text}</p><p class="text-xs text-slate-400">${n.date} • ${n.link}</p></div><button onclick="delNotif(${i})" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash"></i></button></div>`).join('') : '<p class="text-gray-400 text-sm italic text-center py-4">No active notifications.</p>'}
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-indigo-500">
+                            <h3 class="font-bold mb-4 text-indigo-700">Hero Section</h3>
+                            <div class="space-y-3">
+                                <input id="wb-bad" value="${w.hero.badge}" class="w-full border p-2 rounded text-sm" placeholder="Badge Text">
+                                <input id="wb-tit" value="${w.hero.title.replace(/"/g, "'")}" class="w-full border p-2 rounded text-sm" placeholder="Title HTML">
+                                <textarea id="wb-dsc" class="w-full border p-2 rounded text-sm" rows="3">${w.hero.desc}</textarea>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-orange-500">
+                            <h3 class="font-bold mb-4 text-orange-700">About Section</h3>
+                            <div class="space-y-3">
+                                <input id="ab-tit" value="${w.about.title.replace(/"/g, "'")}" class="w-full border p-2 rounded text-sm">
+                                <textarea id="ab-dsc" class="w-full border p-2 rounded text-sm" rows="3">${w.about.desc}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-teal-500">
+                        <h3 class="font-bold mb-4 text-teal-700">Features (Why Choose Us)</h3>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            ${feats.map((f,i)=>`<div class="p-3 border rounded bg-gray-50"><p class="text-xs font-bold text-slate-400 uppercase mb-1">Feature ${i+1}</p><input id="ft-t-${i}" value="${f.title}" class="w-full border p-1 mb-2 text-sm font-bold rounded"><textarea id="ft-d-${i}" class="w-full border p-1 text-xs rounded" rows="2">${f.text}</textarea></div>`).join('')}
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-purple-600">
+                            <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-purple-800">Stats</h3><button onclick="autoStats()" class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold hover:bg-purple-200 transition">Auto-Calculate</button></div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input id="s1" type="number" value="${w.stats.students}" class="border p-2 rounded text-sm" placeholder="Stu"><input id="s2" type="number" value="${w.stats.faculty}" class="border p-2 rounded text-sm" placeholder="Fac"><input id="s3" type="number" value="${w.stats.years}" class="border p-2 rounded text-sm" placeholder="Yrs"><input id="s4" type="number" value="${w.stats.pass}" class="border p-2 rounded text-sm" placeholder="%">
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-gray-600">
+                            <h3 class="font-bold mb-4 text-slate-700">Contact Info</h3>
+                            <div class="grid md:grid-cols-2 gap-3">
+                                <input id="c-ad" value="${w.contact.address}" class="border p-2 rounded text-sm"><input id="c-ph" value="${w.contact.phone}" class="border p-2 rounded text-sm"><input id="c-em" value="${w.contact.email}" class="border p-2 rounded text-sm"><input id="c-mp" value="${w.contact.mapUrl}" class="border p-2 rounded text-sm" placeholder="Map URL">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-green-600">
+                            <div class="flex justify-between mb-4"><h3 class="font-bold text-green-800">Faculty</h3><button onclick="importFac()" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded font-bold hover:bg-green-200">Import Teachers</button></div>
+                            <div class="flex gap-2 mb-3"><input id="f-nm" placeholder="Name" class="border p-2 rounded text-sm flex-1"><input id="f-rl" placeholder="Role" class="border p-2 rounded text-sm w-1/4"><input id="f-im" placeholder="Img URL" class="border p-2 rounded text-sm w-1/4"><button onclick="addFac()" class="bg-green-600 text-white px-3 rounded font-bold">Add</button></div>
+                            <div class="grid md:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">${w.faculty.map((f,i)=>`<div class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50"><img src="${f.img}" class="w-8 h-8 rounded-full bg-gray-200 object-cover"><div class="flex-1 text-xs"><b>${f.name}</b><br>${f.role}</div><button onclick="delWeb('faculty',${i})" class="text-red-500">x</button></div>`).join('')}</div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-pink-600">
+                            <h3 class="font-bold mb-4 text-pink-800">Gallery</h3>
+                            <div class="flex gap-2 mb-3"><input id="g-ur" placeholder="Image URL" class="border p-2 rounded text-sm flex-1"><button onclick="addGal()" class="bg-pink-600 text-white px-3 rounded font-bold">Add</button></div>
+                            <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto custom-scrollbar">${w.gallery.map((u,i)=>`<div class="relative w-16 h-16 group"><img src="${u}" class="w-full h-full object-cover rounded border"><button onclick="delWeb('gallery',${i})" class="absolute top-0 right-0 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">x</button></div>`).join('')}</div>
+                        </div>
+                    </div>
+
+                    <button onclick="saveCMS()" class="fixed bottom-8 right-8 bg-blue-900 text-white px-8 py-3 rounded-full shadow-2xl font-bold hover:scale-105 transition z-50 flex items-center gap-2"><i class="fas fa-save"></i> Save Website</button>
+                </div>`;
+            }
+            
+            // TEACHERS
+            else if(tab === 'teachers') {
+                renderCrudTab('teachers', 'Teachers List', 
+                    `<div class="flex gap-2 mb-4 bg-white p-4 rounded-lg shadow-sm border">
+                        <input id="t-name" placeholder="Full Name" class="border p-2 flex-1 rounded text-sm">
+                        <input id="t-id" placeholder="Login ID" class="border p-2 w-24 rounded text-sm">
+                        <input id="t-pass" placeholder="Password" class="border p-2 w-24 rounded text-sm">
+                        <button id="btn-tea" onclick="saveTeacher()" class="bg-blue-600 text-white px-6 rounded text-sm font-bold hover:bg-blue-700">Add</button>
+                    </div>`,
+                    db.teachers.map(t=>`<tr class="border-b hover:bg-slate-50"><td class="p-3 font-mono text-blue-600">${t.uid}</td><td class="p-3 font-bold">${t.name}</td><td class="p-3 text-slate-400 text-xs">••••</td><td class="p-3"><button onclick="editTeacher('${t.id}')" class="text-blue-500 mr-3 hover:text-blue-700"><i class="fas fa-edit"></i></button><button onclick="delItem('teachers','${t.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></td></tr>`).join('')
+                );
+            }
+            
+            // CLASSES
+            else if(tab === 'classes') {
+                const tOpts = `<option value="">Select Class Teacher</option>` + db.teachers.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+                renderCrudTab('classes', 'Class Management',
+                    `<div class="flex gap-2 mb-6 bg-white p-4 rounded-lg shadow-sm border">
+                        <input id="c-name" placeholder="Class Name (e.g. 10 A)" class="border p-2 flex-1 rounded text-sm">
+                        <select id="c-tid" class="border p-2 rounded bg-white text-sm">${tOpts}</select>
+                        <button id="btn-cls" onclick="saveClass()" class="bg-blue-600 text-white px-6 rounded text-sm font-bold hover:bg-blue-700">Add</button>
+                    </div>`,
+                    db.classes.map(c=>{
+                        const t=db.teachers.find(x=>x.id==c.teacherId);
+                        const subCount = db.subjects.filter(s=>s.classId===c.id).length;
+                        return `<div class="p-4 bg-white border rounded-lg shadow-sm flex justify-between items-center mb-3 hover:shadow-md transition">
+                            <div><span class="font-bold text-lg text-slate-800">${c.name}</span> <span class="text-sm text-slate-500 ml-2">(${t?t.name:'No Teacher'})</span></div>
+                            <div class="flex gap-2">
+                                <button onclick="openSub('${c.id}')" class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold hover:bg-purple-200 transition">Subjects (${subCount})</button>
+                                <button onclick="editClass('${c.id}')" class="text-blue-500 p-2 hover:bg-blue-50 rounded"><i class="fas fa-edit"></i></button>
+                                <button onclick="delItem('classes','${c.id}')" class="text-red-500 p-2 hover:bg-red-50 rounded"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>`;
+                    }).join(''), true
+                );
+            }
+            
+            // STUDENTS
+            else if(tab === 'students') {
+                const sorted = db.students.sort((a,b) => a.admNo.localeCompare(b.admNo, undefined, {numeric:true}));
+                const cOpts = db.classes.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+                
+                area.innerHTML = `
+                <div class="grid md:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-blue-600 h-fit">
+                        <h3 class="font-bold mb-4 text-slate-700">Add / Edit Student</h3>
+                        <div class="space-y-3">
+                            <input id="s-name" placeholder="Full Name" class="w-full border p-2 rounded text-sm focus:ring-2 focus:ring-blue-100 outline-none">
+                            <input id="s-adm" placeholder="Admission No" class="w-full border p-2 rounded text-sm focus:ring-2 focus:ring-blue-100 outline-none">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input id="s-dob" type="date" class="border p-2 rounded text-sm">
+                                <select id="s-gen" class="border p-2 rounded text-sm bg-white"><option>Male</option><option>Female</option></select>
+                            </div>
+                            <select id="s-cid" class="w-full border p-2 rounded text-sm bg-white"><option value="">Select Class</option>${cOpts}</select>
+                            <button id="btn-stu" onclick="saveStudent()" class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700 transition shadow">Add Student</button>
+                        </div>
+                        <div class="mt-6 pt-6 border-t border-slate-100">
+                            <h4 class="font-bold text-xs mb-2 text-slate-500 uppercase">Bulk Upload (Excel)</h4>
+                            <div class="flex gap-2">
+                                <input type="file" id="bulk-file" accept=".xlsx" class="w-full text-xs">
+                                <button onclick="bulkUpload()" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition">Upload</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm md:col-span-2 flex flex-col h-full border border-slate-100">
+                        <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-slate-700">Directory (${db.students.length})</h3><input onkeyup="filterStu(this.value)" placeholder="Search student..." class="border p-2 rounded text-sm w-64 focus:ring-2 focus:ring-blue-100 outline-none"></div>
+                        <div class="flex-1 overflow-y-auto custom-scrollbar rounded border">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 sticky top-0 text-slate-500 uppercase text-xs font-bold"><tr><th class="p-3">Adm</th><th class="p-3">Name</th><th class="p-3">Gender</th><th class="p-3">Class</th><th class="p-3">Action</th></tr></thead>
+                                <tbody id="stu-tbody" class="divide-y divide-slate-100">${sorted.map(s=>{ const c=db.classes.find(x=>x.id==s.classId); return `<tr class="hover:bg-slate-50"><td class="p-3 font-mono text-blue-600">${s.admNo}</td><td class="p-3 font-bold text-slate-700">${s.name}</td><td class="p-3 text-slate-500">${s.gender||'-'}</td><td class="p-3"><span class="bg-slate-100 px-2 py-1 rounded text-xs">${c?c.name:'-'}</span></td><td class="p-3"><button onclick="editStudent('${s.id}')" class="text-blue-500 mr-2 hover:text-blue-700"><i class="fas fa-edit"></i></button><button onclick="delItem('students','${s.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></td></tr>`}).join('')}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            // PROFILE
+            else if(tab === 'profile') {
+                area.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm max-w-md mx-auto border border-slate-100"><div class="text-center mb-6"><div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-4xl text-blue-600 mx-auto mb-3"><i class="fas fa-user-shield"></i></div><h3 class="font-bold text-xl text-slate-800">System Administrator</h3></div><div class="space-y-4"><div><label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Login Email</label><input id="pf-em" value="${db.admin.email}" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 outline-none"></div><div><label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Login Password</label><input id="pf-ps" value="${db.admin.pass}" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-200 outline-none"></div><button onclick="saveAdmin()" class="w-full bg-blue-900 text-white py-3 rounded-lg font-bold hover:bg-blue-800 shadow-lg transition transform active:scale-95">Update Credentials</button></div></div>`;
+            }
+        }
+
+        // --- 4. LOGIC FUNCTIONS ---
+
+        // CMS
+        function clearCMS() { if(!confirm("Reset?")) return; const db=getDB(); db.website.hero={badge:"",title:"",desc:""}; db.website.about={title:"",desc:"",features:[]}; db.website.contact={address:"",phone:"",email:""}; saveDB(db); showTab('cms'); }
+        function saveCMS() { 
+            const db=getDB(); 
+            db.website.hero={badge:el('wb-bad').value, title:el('wb-tit').value, desc:el('wb-dsc').value};
+            db.website.about.title = el('ab-tit').value; db.website.about.desc = el('ab-dsc').value;
+            db.website.about.features.forEach((f,i) => { f.title = el('ft-t-'+i).value; f.text = el('ft-d-'+i).value; });
+            db.website.stats={students:el('s1').value, faculty:el('s2').value, years:el('s3').value, pass:el('s4').value};
+            db.website.contact={address:el('c-ad').value, phone:el('c-ph').value, email:el('c-em').value, mapUrl:el('c-mp').value};
+            saveDB(db); showToast('Saved'); 
+        }
+        function addNotif() { const t=el('nf-txt').value; if(!t)return; const db=getDB(); db.website.notifications.unshift({id:genId(), text:t, link:el('nf-lnk').value||'#', date:new Date().toLocaleDateString()}); saveDB(db); showTab('cms'); }
+        function delNotif(i) { if(confirm("Del?")){const db=getDB(); db.website.notifications.splice(i,1); saveDB(db); showTab('cms');} }
+        function autoStats() { const db=getDB(); el('s1').value=db.students.length; el('s2').value=db.teachers.length; el('s3').value=new Date().getFullYear()-1990; showToast('Calculated'); }
+        
+        function addFac() { pushW('faculty', {name:el('f-nm').value, role:el('f-rl').value, img:el('f-im').value}); }
+        function addGal() { pushW('gallery', el('g-ur').value); }
+        function delWeb(k,i) { if(confirm('Del?')){const db=getDB(); db.website[k].splice(i,1); saveDB(db); showTab('cms');} }
+        function pushW(k,v) { if(!v)return; const db=getDB(); db.website[k].push(v); saveDB(db); showTab('cms'); }
+        function importFac() { const db=getDB(); db.teachers.forEach(t=>{ if(!db.website.faculty.some(f=>f.name===t.name)) db.website.faculty.push({name:t.name, role:"Teacher", img:"https://ui-avatars.com/api/?name="+t.name}); }); saveDB(db); showTab('cms'); }
+
+        // Results Approval
+        function approveResults(name, cid) {
+            const db=getDB();
+            db.results.forEach(r => { if(r.examName===name && r.classId===cid && !r.isPublished) r.isPublished = true; });
+            saveDB(db); showToast('Published'); showTab('results');
+        }
+        // Results Admin Entry
+        function loadSheet() {
+            const cid=el('mk-cid').value; if(!cid)return; const db=getDB(); 
+            const s=db.students.filter(x=>x.classId===cid).sort((a,b)=>a.admNo.localeCompare(b.admNo,undefined,{numeric:true})); 
+            const sub=db.subjects.filter(x=>x.classId===cid);
+            if(!s.length) return el('sheet-area').innerHTML='<p class="text-red-500 mt-2">No students.</p>';
+            if(!sub.length) return el('sheet-area').innerHTML='<p class="text-yellow-600 mt-2">No subjects.</p>';
+            
+            let h=`<table class="w-full text-sm border mt-4"><thead><tr class="bg-gray-100"><th class="p-2 border">Name</th>${sub.map(x=>`<th class="p-2 border">${x.name} (Pass:${x.passMark})</th>`).join('')}</tr></thead><tbody>`;
+            h+=s.map(x=>`<tr><td class="p-2 border font-bold">${x.name}</td>${sub.map(b=>`<td class="p-2 border"><input type="number" class="w-full p-1 mk-inp outline-none bg-slate-50 focus:bg-white" data-sid="${x.id}" data-sub="${b.name}" data-pass="${b.passMark}"></td>`).join('')}</tr>`).join('');
+            h+=`</tbody></table><button onclick="pubRes('${cid}')" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded font-bold shadow">Publish</button>`;
+            el('sheet-area').innerHTML=h;
+        }
+        function pubRes(cid) {
+            const db=getDB(); const en=el('mk-ename').value; if(!en)return alert('Enter Exam Name');
+            const s=db.students.filter(x=>x.classId===cid); const sub=db.subjects.filter(x=>x.classId===cid);
+            s.forEach(x=>{
+                let m={}; let t=0; let p=true;
+                sub.forEach(b=>{
+                    const inp=document.querySelector(`.mk-inp[data-sid="${x.id}"][data-sub="${b.name}"]`);
+                    const v=parseInt(inp?inp.value:0)||0; m[b.name]=v; t+=v; if(v<parseInt(b.passMark))p=false;
+                });
+                db.results.push({id:genId(), examName:en, studentId:x.id, marks:m, total:t, status:p?'PASS':'FAIL', date:new Date().toLocaleDateString(), isPublished:true, classId:cid});
+            });
+            saveDB(db); showToast('Published'); showTab('results');
+        }
+
+        // CRUD
+        function renderCrudTab(type, title, inputHtml, listHtml, isDivList=false) { el('content-area').innerHTML = `<div class="bg-white p-6 rounded shadow h-full flex flex-col"><h3 class="font-bold text-lg mb-4 text-gray-700">${title}</h3>${inputHtml}<div class="flex-1 overflow-y-auto mt-4 custom-scrollbar border rounded-lg p-1">${isDivList ? `<div class="space-y-2">${listHtml}</div>` : `<table class="w-full text-sm text-left"><thead class="bg-slate-50 text-slate-500 font-bold sticky top-0"><tr><th class="p-3">ID</th><th class="p-3">Name</th><th class="p-3">Actions</th></tr></thead><tbody class="divide-y divide-slate-100">${listHtml}</tbody></table>`}</div></div>`; }
+        function handleSave(col, data) { const db=getDB(); if(editMode){const i=db[col].findIndex(x=>x.id===editMode); db[col][i]={...db[col][i],...data}; showToast('Updated');} else {db[col].push({id:genId(),...data}); showToast('Added');} saveDB(db); showTab(col); }
+        function saveTeacher() { handleSave('teachers', {name:el('t-name').value, uid:el('t-id').value, pass:el('t-pass').value}); }
+        function saveClass() { handleSave('classes', {name:el('c-name').value, teacherId:el('c-tid').value}); }
+        function saveStudent() { handleSave('students', {name:el('s-name').value, admNo:el('s-adm').value, dob:el('s-dob').value, gender:el('s-gen').value, classId:el('s-cid').value}); }
+        function editTeacher(id) { const x=getDB().teachers.find(i=>i.id===id); el('t-name').value=x.name; el('t-id').value=x.uid; el('t-pass').value=x.pass; editMode=id; el('btn-tea').innerText='Update'; }
+        function editClass(id) { const x=getDB().classes.find(i=>i.id===id); el('c-name').value=x.name; el('c-tid').value=x.teacherId; editMode=id; el('btn-cls').innerText='Update'; }
+        function editStudent(id) { const x=getDB().students.find(i=>i.id===id); el('s-name').value=x.name; el('s-adm').value=x.admNo; el('s-dob').value=x.dob; el('s-gen').value=x.gender; el('s-cid').value=x.classId; editMode=id; el('btn-stu').innerText='Update'; }
+        function delItem(c,id) { if(confirm('Delete?')){const db=getDB(); db[c]=db[c].filter(x=>x.id!==id); saveDB(db); showTab(c);} }
+        function saveAdmin() { const db=getDB(); db.admin={email:el('pf-em').value, pass:el('pf-ps').value}; saveDB(db); showToast('Updated'); }
+        function filterStu(q) { const rows = document.getElementById('stu-tbody').getElementsByTagName('tr'); for(let r of rows) r.style.display = r.innerText.toLowerCase().includes(q.toLowerCase()) ? '' : 'none'; }
+
+        // Subjects
+        function openSub(cid) { el('modal-sub').classList.remove('hidden'); el('active-cid').value=cid; el('new-sub-pass').value=lastPassMark; renderSub(cid); }
+        function renderSub(cid) { const db=getDB(); const s=db.subjects.filter(x=>x.classId===cid); el('sub-list').innerHTML=s.map(x=>`<div class="flex justify-between p-2 bg-gray-50 rounded text-sm border"><span>${x.name} (Pass:${x.passMark})</span><button onclick="delSub('${x.id}')" class="text-red-500">x</button></div>`).join(''); }
+        function addSubject() { const n=el('new-sub').value; const p=el('new-sub-pass').value; const cid=el('active-cid').value; if(!n)return; const db=getDB(); db.subjects.push({id:genId(), name:n, passMark:p, classId:cid}); lastPassMark=p; localStorage.setItem('hihsm_last_pass',p); saveDB(db); el('new-sub').value=''; renderSub(cid); }
+        function delSub(id) { const db=getDB(); db.subjects=db.subjects.filter(x=>x.id!==id); saveDB(db); renderSub(el('active-cid').value); }
+
+        // Bulk Upload
+        function bulkUpload() {
+            const f = el('bulk-file').files[0]; const cid = el('s-cid').value;
+            if(!f || !cid) return alert('Select Class & File');
+            const r = new FileReader();
+            r.onload = e => {
+                const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+                const db = getDB(); let c=0;
+                for(let i=1; i<rows.length; i++) { if(rows[i][0]) { db.students.push({id:genId(), name:rows[i][0], admNo:rows[i][1], dob:rows[i][2], gender:rows[i][3]||'Male', classId:cid}); c++; } }
+                saveDB(db); showTab('students'); showToast(`Imported ${c} students`);
+            };
+            r.readAsArrayBuffer(f);
+        }
+    </script>
+</body>
+</html>

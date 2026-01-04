@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAYATHUL ISLAM HSS - Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 font-inter text-gray-800">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <section id="view-landing" class="min-h-screen flex flex-col items-center justify-center p-6 fade-in">
+        <div class="text-center mb-12">
+            <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl mx-auto mb-6 shadow-lg">
+                <i class="fas fa-university"></i>
+            </div>
+            <h1 class="text-3xl md:text-5xl font-bold text-gray-900 mb-3 tracking-tight">HAYATHUL ISLAM HSS</h1>
+            <p class="text-gray-500 text-lg">Official Academic Portal</p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-8 max-w-4xl w-full">
+            <div onclick="showLogin('student')" class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 cursor-pointer hover:shadow-2xl hover:border-purple-200 transition transform hover:-translate-y-1 group">
+                <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 text-3xl mb-6 group-hover:bg-purple-600 group-hover:text-white transition"><i class="fas fa-user-graduate"></i></div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">Student Login</h3>
+                <p class="text-gray-500">View Results & Certificates</p>
+            </div>
+            
+            <div onclick="showLogin('inst')" class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 cursor-pointer hover:shadow-2xl hover:border-blue-200 transition transform hover:-translate-y-1 group">
+                <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 text-3xl mb-6 group-hover:bg-blue-600 group-hover:text-white transition"><i class="fas fa-lock"></i></div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">Admin Login</h3>
+                <p class="text-gray-500">Staff & Management Access</p>
+            </div>
+        </div>
+        
+        <div class="mt-12">
+            <a href="index.html" class="text-gray-400 hover:text-blue-600 flex items-center gap-2 text-sm font-medium transition"><i class="fas fa-home"></i> Back to Home</a>
+        </div>
+    </section>
+
+    <section id="view-login" class="hidden min-h-screen flex items-center justify-center p-4 bg-white fade-in">
+        <div class="max-w-md w-full">
+            <button onclick="goBackToLanding()" class="mb-8 text-gray-500 hover:text-blue-600 flex items-center gap-2 font-medium transition"><i class="fas fa-arrow-left"></i> Back</button>
+            
+            <div id="login-form-inst" class="hidden">
+                <h2 class="text-3xl font-bold text-blue-600 mb-2">Admin Portal</h2>
+                <p class="text-gray-400 mb-6">Enter system credentials.</p>
+                <form onsubmit="handleInstLogin(event)">
+                    <div class="mb-4"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label><input type="email" id="inst-email" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-200" required></div>
+                    <div class="mb-6"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label><input type="password" id="inst-pass" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-200" required></div>
+                    <button type="submit" id="btn-inst-login" class="w-full btn-master btn-primary py-3 rounded-lg text-lg shadow-lg">Login</button>
+                </form>
+            </div>
+
+            <div id="login-form-student" class="hidden">
+                <h2 class="text-3xl font-bold text-purple-600 mb-2">Student Portal</h2>
+                <p class="text-gray-400 mb-6">Enter your admission details.</p>
+                <form onsubmit="handleStudentLogin(event)">
+                    <div class="mb-4"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Admission Number</label><input type="text" id="student-adm" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-200" required></div>
+                    
+                    <div class="mb-6">
+                        <label id="lbl-student-cred" class="block text-xs font-bold text-gray-500 uppercase mb-1">Date of Birth</label>
+                        <input type="date" id="student-cred" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-200" required>
+                    </div>
+
+                    <button type="submit" id="btn-student-login" class="w-full btn-master bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg text-lg shadow-lg transition">View Dashboard</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-inst" class="hidden min-h-screen flex fade-in bg-gray-50">
+        <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col fixed h-full z-20">
+             <div class="p-6 border-b border-gray-100">
+                <h2 class="text-xl font-bold text-blue-600 flex items-center gap-2"><i class="fas fa-university"></i> Admin Panel</h2>
+            </div>
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                 <button onclick="showInstTab('home')" id="nav-home" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition flex items-center font-medium text-gray-600"><i class="fas fa-home w-6"></i> Overview</button>
+                 <button onclick="showInstTab('classes')" id="nav-classes" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition flex items-center font-medium text-gray-600"><i class="fas fa-school w-6"></i> Classes</button>
+                 <button onclick="showInstTab('students')" id="nav-students" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition flex items-center font-medium text-gray-600"><i class="fas fa-user-graduate w-6"></i> Students</button>
+                 <button onclick="showInstTab('exams')" id="nav-exams" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition flex items-center font-medium text-gray-600"><i class="fas fa-calendar-alt w-6"></i> Exams</button>
+                 <button onclick="showInstTab('publish')" id="nav-publish" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition flex items-center font-medium text-gray-600"><i class="fas fa-edit w-6"></i> Publish Result</button>
+                 <button onclick="showInstTab('profile')" id="nav-profile" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition flex items-center font-medium text-gray-600"><i class="fas fa-cog w-6"></i> Config</button>
+            </nav>
+            <div class="p-4 border-t border-gray-100">
+                <button onclick="logout()" class="w-full text-left px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg transition flex items-center gap-2 font-medium"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </aside>
+        <main class="flex-1 md:ml-64 p-4 md:p-8 overflow-y-auto bg-gray-50 min-h-screen">
+            <header class="flex justify-between items-center mb-8">
+                <h2 id="inst-page-title" class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                <div class="text-sm text-gray-500 bg-white px-3 py-1 rounded-full border shadow-sm" id="current-date-display"></div>
+            </header>
+            <div id="inst-content-area"></div>
+        </main>
+    </section>
+
+    <section id="view-student" class="hidden min-h-screen bg-[#f3f4f6] flex flex-col md:flex-row fade-in font-inter">
+        <aside class="w-full md:w-72 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col h-full fixed md:relative z-20">
+            <div class="p-8 border-b border-gray-100">
+                <div class="flex items-center gap-4 mb-1">
+                    <div class="w-12 h-12 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-purple-200">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-gray-800 text-lg leading-tight">Student<br>Portal</h2>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                         <div id="sidebar-avatar-container" class="w-full h-full flex items-center justify-center text-gray-400"><i class="fas fa-user"></i></div>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h3 class="font-bold text-gray-800 text-sm truncate" id="st-sidebar-name">Student Name</h3>
+                        <p class="text-xs text-gray-500 font-mono truncate" id="st-sidebar-adm">ADM: ---</p>
+                    </div>
+                </div>
+
+                <nav class="space-y-1">
+                    <button onclick="showStudentTab('results')" id="st-nav-results" class="nav-item w-full text-left px-4 py-3.5 rounded-xl hover:bg-gray-50 text-gray-600 hover:text-purple-600 transition flex items-center gap-3 font-semibold group">
+                        <div class="w-6 text-center"><i class="fas fa-th-large group-hover:scale-110 transition"></i></div> Dashboard
+                    </button>
+                    
+                    <button onclick="showStudentTab('certificates')" id="st-nav-certificates" class="nav-item w-full text-left px-4 py-3.5 rounded-xl hover:bg-gray-50 text-gray-600 hover:text-purple-600 transition flex items-center gap-3 font-semibold group">
+                        <div class="w-6 text-center"><i class="fas fa-certificate group-hover:scale-110 transition"></i></div> Certificates
+                    </button>
+                    
+                    <button onclick="showStudentTab('profile')" id="st-nav-profile" class="nav-item w-full text-left px-4 py-3.5 rounded-xl hover:bg-gray-50 text-gray-600 hover:text-purple-600 transition flex items-center gap-3 font-semibold group">
+                        <div class="w-6 text-center"><i class="fas fa-user-circle group-hover:scale-110 transition"></i></div> My Profile
+                    </button>
+                    
+                    <button onclick="showStudentTab('security')" id="st-nav-security" class="nav-item w-full text-left px-4 py-3.5 rounded-xl hover:bg-gray-50 text-gray-600 hover:text-purple-600 transition flex items-center gap-3 font-semibold group">
+                        <div class="w-6 text-center"><i class="fas fa-shield-alt group-hover:scale-110 transition"></i></div> Security
+                    </button>
+                </nav>
+            </div>
+            
+            <div class="mt-auto p-6 border-t border-gray-100">
+                <button onclick="logout()" class="w-full text-left px-4 py-3 text-red-500 bg-red-50 rounded-xl hover:bg-red-500 hover:text-white transition flex items-center justify-center gap-2 font-bold shadow-sm">
+                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-4 md:p-10 overflow-y-auto h-screen">
+            <header class="flex flex-col md:flex-row md:justify-between md:items-center mb-10 gap-4">
+                <div>
+                    <h1 class="text-3xl font-black text-gray-800 tracking-tight" id="st-page-title">Dashboard</h1>
+                    <p class="text-gray-500 font-medium flex items-center gap-2">
+                        <i class="fas fa-university text-gray-400"></i> <span id="st-institution-name">Institution Name</span>
+                    </p>
+                </div>
+                <div class="bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100 text-sm font-bold text-gray-600 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> <span id="student-date-display">--/--/----</span>
+                </div>
+            </header>
+            
+            <div id="student-content-area" class="pb-10"></div>
+        </main>
+    </section>
+
+    <section id="view-marksheet" class="hidden min-h-screen bg-gray-800 p-4 md:p-8 fade-in flex justify-center overflow-y-auto fixed inset-0 z-50">
+        <div class="fixed bottom-8 right-8 flex flex-col gap-3 no-print z-50">
+            <div class="bg-white p-2 rounded-2xl shadow-2xl flex flex-col gap-2 border border-gray-200">
+                <button onclick="viewCertificate()" class="w-12 h-12 rounded-xl bg-yellow-50 text-yellow-600 hover:bg-yellow-500 hover:text-white transition flex items-center justify-center text-xl" title="Get Certificate"><i class="fas fa-certificate"></i></button>
+                <div class="h-px bg-gray-200 mx-2"></div>
+                <button onclick="shareResult('pdf')" class="w-12 h-12 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center justify-center text-xl"><i class="fas fa-file-pdf"></i></button>
+                <button onclick="shareResult('image')" class="w-12 h-12 rounded-xl bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition flex items-center justify-center text-xl"><i class="fas fa-image"></i></button>
+                <div class="w-px bg-gray-300 mx-1"></div>
+                <button onclick="window.print()" class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center text-xl"><i class="fas fa-print"></i></button>
+                <button onclick="closeMarksheet()" class="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-800 hover:text-white transition flex items-center justify-center text-xl"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+
+        <div id="mk-printable" class="w-full max-w-[210mm] min-h-[297mm] bg-white shadow-2xl relative mx-auto overflow-hidden rounded-sm">
+            <div class="h-3 bg-gradient-to-r from-blue-700 via-blue-500 to-blue-700"></div>
+            <div class="p-10 md:p-12 relative h-full flex flex-col">
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.02]"><i class="fas fa-university text-[400px]"></i></div>
+
+                <header class="flex justify-between items-end border-b-2 border-gray-900 pb-6 mb-8 relative z-10">
+                    <div class="flex gap-5 items-center">
+                        <div class="w-16 h-16 bg-blue-900 text-white flex items-center justify-center text-2xl rounded-lg shadow-sm"><i class="fas fa-graduation-cap"></i></div>
+                        <div><h1 class="text-3xl font-black text-gray-900 uppercase tracking-tight leading-none" id="mk-inst-name">Institution Name</h1><p class="text-gray-500 font-bold text-xs tracking-widest uppercase mt-1">Official Academic Transcript</p></div>
+                    </div>
+                    <div class="text-right"><div class="text-4xl font-black text-gray-200 tracking-tighter">RESULT</div><p class="text-xs text-gray-500 font-mono mt-1">Generated: <span id="mk-date">--</span></p></div>
+                </header>
+
+                <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-8 relative z-10">
+                    <div class="flex items-start gap-6">
+                        <div class="flex-1 grid grid-cols-2 gap-y-5 gap-x-8">
+                            <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Student Name</p><p class="text-lg font-bold text-gray-900 truncate" id="mk-name">--</p></div>
+                            <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Examination</p><p class="text-lg font-bold text-gray-900 truncate" id="mk-exam">--</p></div>
+                            <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Admission No</p><p class="text-base font-mono font-semibold text-gray-700" id="mk-adm">--</p></div>
+                            <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Class</p><p class="text-base font-semibold text-gray-700" id="mk-class">--</p></div>
+                            <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Date of Birth</p><p class="text-base font-medium text-gray-600" id="mk-dob">--</p></div>
+                            <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Attendance</p><p class="text-base font-bold text-blue-700" id="mk-attendance">--</p></div>
+                        </div>
+                        <div class="w-28 h-32 bg-white border-2 border-gray-200 rounded-lg flex-shrink-0 overflow-hidden shadow-sm flex items-center justify-center" id="mk-photo-container"><i class="fas fa-user text-gray-300 text-4xl"></i></div>
+                    </div>
+                </div>
+
+                <div class="mb-8 relative z-10 flex-grow">
+                    <table class="w-full border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-gray-900 text-white border-b-4 border-blue-600">
+                                <th class="p-3 text-left font-bold rounded-tl-md w-5/12">Subject</th>
+                                <th class="p-3 text-center font-bold w-2/12">Max Marks</th>
+                                <th class="p-3 text-center font-bold w-2/12">Obtained</th>
+                                <th class="p-3 text-center font-bold w-2/12 rounded-tr-md">Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mk-tbody" class="text-gray-700 font-medium"></tbody>
+                        <tfoot class="bg-gray-100 font-bold text-gray-900 border-t-2 border-gray-900">
+                            <tr><td class="p-3 text-right text-base">GRAND TOTAL</td><td class="p-3 text-center text-base" id="mk-total-max">0</td><td class="p-3 text-center text-base text-blue-700" id="mk-total-obt">0</td><td class="p-3"></td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 mb-16 relative z-10">
+                    <div class="p-5 border rounded-lg bg-blue-50 border-blue-100 text-center"><p class="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">Percentage</p><p class="text-3xl font-black text-blue-700" id="mk-percentage">0%</p></div>
+                    <div class="p-5 border rounded-lg bg-purple-50 border-purple-100 text-center"><p class="text-[10px] font-bold text-purple-500 uppercase tracking-wider mb-1">Class Rank</p><p class="text-3xl font-black text-purple-700" id="mk-rank">-</p></div>
+                    <div class="p-5 border rounded-lg bg-gray-900 text-white text-center"><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Final Status</p><p class="text-3xl font-black text-green-400" id="mk-final-status">PASS</p></div>
+                </div>
+
+                <div class="bg-gray-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-4 relative z-10">
+                    <p class="text-sm text-gray-700 italic" id="mk-message-text"></p>
+                </div>
+
+                <div class="flex justify-between items-end pt-8 border-t border-gray-300 relative z-10 mt-auto">
+                    <div class="text-[10px] text-gray-400"><p class="font-bold text-gray-500">Note:</p><p>This is a computer-generated document.</p><p>Valid online.</p></div>
+                    <div class="text-center"><div class="h-14 w-40 border-b-2 border-gray-900 mb-2"></div><p class="text-[10px] font-bold uppercase tracking-widest text-gray-600">Principal's Signature</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+     <section id="view-certificate" class="hidden min-h-screen bg-gray-900/95 p-4 fade-in flex justify-center items-center overflow-y-auto fixed inset-0 z-[60] backdrop-blur-md">
+        <div class="relative w-full max-w-[297mm] bg-white shadow-2xl rounded-lg overflow-hidden p-2 landscape-mode">
+            
+            <div class="absolute top-4 right-4 z-50 flex gap-2 no-print">
+                <button onclick="downloadCertPDF()" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-lg px-4 font-bold text-sm flex items-center gap-2"><i class="fas fa-download"></i> PDF</button>
+                <button onclick="document.getElementById('view-certificate').classList.add('hidden')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 rounded-lg shadow-lg"><i class="fas fa-times text-xl"></i></button>
+            </div>
+
+            <div id="cert-printable" class="h-full relative bg-[#fffdf5] overflow-hidden flex flex-col justify-center">
+                
+                <div id="cert-default-layer" class="absolute inset-0 pointer-events-none z-0 border-8 border-double border-yellow-600 m-4">
+                    <div class="absolute top-2 left-2 text-4xl text-yellow-600"><i class="fas fa-certificate"></i></div>
+                    <div class="absolute top-2 right-2 text-4xl text-yellow-600"><i class="fas fa-certificate"></i></div>
+                    <div class="absolute bottom-2 left-2 text-4xl text-yellow-600"><i class="fas fa-certificate"></i></div>
+                    <div class="absolute bottom-2 right-2 text-4xl text-yellow-600"><i class="fas fa-certificate"></i></div>
+                    <div class="absolute inset-0 flex items-center justify-center opacity-[0.03]">
+                        <i class="fas fa-award text-[500px] text-yellow-700"></i>
+                    </div>
+                </div>
+
+                <div class="relative z-10 text-center px-20 py-12 h-full flex flex-col justify-between">
+                    
+                    <div class="mt-4">
+                        <h2 class="text-5xl font-serif font-bold text-gray-900 mb-2 uppercase tracking-widest text-yellow-700 drop-shadow-sm">Certificate</h2>
+                        <p class="text-xl text-gray-500 font-serif italic">of Achievement</p>
+                    </div>
+
+                    <div class="my-auto">
+                        <p class="text-gray-500 text-lg mb-6 font-medium">This is to certify that</p>
+                        <h1 class="text-6xl font-black text-blue-900 font-serif mb-6 capitalize tracking-wide" id="cert-name">Student Name</h1>
+                        <p class="text-gray-600 text-xl leading-relaxed max-w-4xl mx-auto font-light">
+                            has successfully completed the <strong id="cert-exam" class="text-gray-900 font-bold">Final Exam</strong> for <strong id="cert-class" class="text-gray-900 font-bold">Class X</strong> <br>
+                            at <strong id="cert-inst" class="text-gray-900 font-bold">Institution Name</strong> <br>
+                            demonstrating excellence with a score of <strong id="cert-percent" class="text-blue-600">0%</strong> (<span id="cert-grade">A</span>)
+                        </p>
+                    </div>
+
+                    <div class="flex justify-between items-end px-10 mb-4">
+                        <div class="text-center">
+                            <p class="text-lg font-bold text-gray-800 mb-1" id="cert-date">--</p>
+                            <div class="h-0.5 w-40 bg-gray-400 mb-2 mx-auto"></div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Date Issued</p>
+                        </div>
+                        
+                        <div class="w-24 h-24 bg-yellow-600 text-white rounded-full flex items-center justify-center text-4xl shadow-xl shadow-yellow-200 border-4 border-white">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+
+                        <div class="text-center relative">
+                            <div id="cert-sig-container" class="h-16 w-48 mb-1 flex items-end justify-center overflow-hidden">
+                                </div>
+                            <div class="h-0.5 w-48 bg-gray-400 mb-2 mx-auto"></div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Principal Signature</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all scale-100 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                <h3 class="text-xl font-bold text-gray-800" id="modal-title">Edit Item</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div id="modal-inputs" class="space-y-4 p-1"></div>
+            <div class="flex gap-3 mt-6 pt-4 border-t border-gray-50">
+                <button onclick="closeModal()" class="flex-1 py-2.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 font-medium transition">Cancel</button>
+                <button id="btn-modal-save" onclick="saveEdit()" class="flex-1 btn-master btn-primary py-2.5 rounded-lg text-sm shadow-lg">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-cropper" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl overflow-hidden w-full max-w-lg shadow-2xl">
+             <div class="p-4 border-b flex justify-between items-center">
+                 <h3 class="font-bold text-lg">Crop Image</h3>
+                 <button onclick="document.getElementById('modal-cropper').classList.add('hidden')" class="text-gray-500"><i class="fas fa-times"></i></button>
+             </div>
+             <div class="h-96 bg-gray-900 flex items-center justify-center">
+                 <img id="cropper-img" src="" style="max-width: 100%; max-height: 100%; display: block;">
+             </div>
+             <div class="p-4 flex justify-end gap-3 bg-gray-50">
+                 <button onclick="document.getElementById('modal-cropper').classList.add('hidden')" class="px-4 py-2 border rounded-lg text-sm font-medium">Cancel</button>
+                 <button onclick="cropAndSave()" class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700">Crop & Save</button>
+             </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

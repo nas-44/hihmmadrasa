@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Faculty Portal - HIHSM</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; color: #1e293b; }
+        .nav-item { transition: all 0.3s ease; border-left: 4px solid transparent; }
+        .nav-item:hover { background-color: #dcfce7; padding-left: 1rem; color: #166534; }
+        .nav-item.active { background-color: #dcfce7; color: #15803d; border-left-color: #15803d; font-weight: 600; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 20px 50px -10px rgba(22, 163, 74, 0.15); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #86efac; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #22c55e; }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <div id="login-view" class="min-h-screen flex items-center justify-center p-4 relative">
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+            <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse"></div>
+            <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse"></div>
+        </div>
+
+        <div class="glass-card p-10 rounded-3xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg"><i class="fas fa-chalkboard-teacher"></i></div>
+                <h2 class="text-2xl font-bold text-slate-800">Faculty Login</h2>
+                <p class="text-sm text-slate-500 mt-1">Secure Staff Access</p>
+            </div>
+            <form onsubmit="teacherLogin(event)" class="space-y-5">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1">Staff ID</label>
+                    <input id="t-id" class="w-full p-3 border border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition bg-green-50/30" placeholder="e.g. FAC-01">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1">Password</label>
+                    <input id="t-pass" type="password" class="w-full p-3 border border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition bg-green-50/30" placeholder="••••••••">
+                </div>
+                <button class="w-full bg-green-700 text-white py-3.5 rounded-xl font-bold hover:bg-green-800 transition shadow-lg hover:shadow-xl transform active:scale-95">Login Dashboard</button>
+            </form>
+            <a href="index.html" class="block text-center mt-8 text-xs font-bold text-green-600 hover:underline">Back to Website</a>
+        </div>
+    </div>
+
+    <div id="dash-view" class="hidden flex h-screen">
+        <aside class="w-64 bg-white border-r border-green-100 flex flex-col shadow-xl z-20">
+            <div class="p-6 border-b border-green-50 flex items-center gap-3">
+                <div class="w-8 h-8 bg-green-700 rounded flex items-center justify-center text-white font-bold shadow">FT</div>
+                <h2 class="font-bold text-green-900 text-lg">Faculty Panel</h2>
+            </div>
+            <div class="p-6 border-b border-green-50 bg-green-50/30">
+                <div class="flex items-center gap-3">
+                    <img id="side-img" src="" class="w-10 h-10 rounded-full bg-white object-cover border-2 border-green-200 shadow-sm">
+                    <div><h3 class="font-bold text-sm text-green-900 truncate w-32" id="t-name-disp">--</h3><p class="text-xs text-green-600 font-mono bg-white px-2 py-0.5 rounded inline-block mt-1 border border-green-100" id="t-id-disp">--</p></div>
+                </div>
+            </div>
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <button onclick="renderTab('home')" id="nav-home" class="nav-item w-full text-left px-4 py-3 rounded-xl text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-chalkboard w-5 text-center"></i> My Classes</button>
+                <button onclick="renderTab('attendance')" id="nav-attendance" class="nav-item w-full text-left px-4 py-3 rounded-xl text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-user-check w-5 text-center"></i> Attendance</button>
+                <button onclick="renderTab('marks')" id="nav-marks" class="nav-item w-full text-left px-4 py-3 rounded-xl text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-file-signature w-5 text-center"></i> Upload Marks</button>
+                <button onclick="renderTab('exams')" id="nav-exams" class="nav-item w-full text-left px-4 py-3 rounded-xl text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-list-alt w-5 text-center"></i> Manage Exams</button>
+                <div class="my-2 border-t border-green-50"></div>
+                <button onclick="renderTab('profile')" id="nav-profile" class="nav-item w-full text-left px-4 py-3 rounded-xl text-slate-600 font-medium flex items-center gap-3"><i class="fas fa-user-circle w-5 text-center"></i> My Profile</button>
+            </nav>
+            <div class="p-4 border-t border-green-100"><button onclick="logout()" class="w-full text-left px-4 py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition flex items-center gap-2"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+        </aside>
+        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-green-50/30">
+            <header class="bg-white border-b border-green-100 px-8 py-4 flex justify-between items-center shadow-sm z-10">
+                <h1 id="page-title" class="text-xl font-bold text-green-900">Dashboard</h1>
+                <div class="text-xs text-gray-500 bg-green-50 px-3 py-1.5 rounded-full border border-green-100 flex items-center gap-2"><i class="far fa-calendar-alt text-green-600"></i> <span id="date-display"></span></div>
+            </header>
+            <div id="content" class="flex-1 overflow-y-auto p-8 fade-in pb-24"></div>
+        </main>
+    </div>
+
+    <div id="modal-stu" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform scale-100 transition-transform">
+            <div class="flex justify-between items-center mb-6 border-b pb-2">
+                <h3 class="font-bold text-lg text-gray-800" id="modal-stu-title">Register New Student</h3>
+                <button onclick="document.getElementById('modal-stu').classList.add('hidden')" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div><label class="text-xs font-bold text-slate-400 uppercase mb-1 block ml-1">Full Name</label><input id="new-s-name" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm bg-slate-50"></div>
+                <div><label class="text-xs font-bold text-slate-400 uppercase mb-1 block ml-1">Admission No</label><input id="new-s-adm" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm bg-slate-50 font-mono"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-xs font-bold text-slate-400 uppercase mb-1 block ml-1">DOB</label><input id="new-s-dob" type="date" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm bg-slate-50"></div>
+                    <div><label class="text-xs font-bold text-slate-400 uppercase mb-1 block ml-1">Gender</label><select id="new-s-gen" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm bg-white"><option value="Male">Male</option><option value="Female">Female</option></select></div>
+                </div>
+                <button id="btn-save-stu" onclick="saveStudentData()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition shadow-lg mt-2">Register Student</button>
+            </div>
+            <input type="hidden" id="active-cid-stu">
+        </div>
+    </div>
+
+    <script>
+        const DB_KEY = 'hihsm_data_ultimate';
+        let currentUser = null;
+        let editStudentId = null;
+
+        function getDB() { let data; try { data = JSON.parse(localStorage.getItem(DB_KEY)); } catch(e){} if(!data) return { teachers:[], classes:[], students:[], subjects:[], results:[], website:{faculty:[]} }; return data; }
+        function saveDB(data) { localStorage.setItem(DB_KEY, JSON.stringify(data)); }
+        function genId() { return Math.random().toString(36).substr(2,9); }
+        function showToast(msg) { const el=document.createElement('div'); el.className='p-4 bg-green-600 text-white rounded-lg fixed top-5 right-5 shadow-xl z-50 animate-bounce'; el.innerText=msg; document.getElementById('toast-container').appendChild(el); setTimeout(()=>el.remove(),3000); }
+        function el(id) { return document.getElementById(id); }
+        
+        window.onload = () => { el('date-display').innerText = new Date().toLocaleDateString(); };
+
+        function teacherLogin(e) {
+            e.preventDefault(); const db=getDB(); const t=db.teachers.find(x=>x.uid===el('t-id').value && x.pass===el('t-pass').value);
+            if(t) { currentUser=t; el('login-view').classList.add('hidden'); el('dash-view').classList.remove('hidden'); el('t-name-disp').innerText=t.name; el('t-id-disp').innerText=t.uid; el('side-img').src=t.img||`https://ui-avatars.com/api/?name=${t.name}&background=15803d&color=fff`; renderTab('home'); } else alert('Invalid');
+        }
+        function logout() { location.reload(); }
+
+        function renderTab(tab) {
+            const db = getDB(); const area = el('content'); const myClasses = db.classes.filter(c => c.teacherId === currentUser.id);
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active')); el('nav-'+tab).classList.add('active'); el('page-title').innerText = tab === 'home' ? 'Class Overview' : tab.charAt(0).toUpperCase() + tab.slice(1);
+
+            // 1. HOME
+            if(tab === 'home') {
+                if(myClasses.length === 0) { area.innerHTML = '<div class="text-center p-12 bg-white rounded-xl text-gray-400">No classes assigned.</div>'; return; }
+                area.innerHTML = `<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">${myClasses.map(c => { const cnt=db.students.filter(s=>s.classId===c.id).length; return `<div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600 hover:shadow-md transition group"><div class="flex justify-between items-start mb-4"><div><h3 class="font-bold text-lg text-gray-800">${c.name}</h3><p class="text-green-600 text-xs font-bold uppercase mt-1">Class Teacher</p></div><div class="bg-green-50 text-green-700 px-3 py-1 rounded-lg font-bold text-sm border border-green-100">${cnt} Students</div></div><div class="flex gap-2 mt-4"><button onclick="viewClassStudents('${c.id}')" class="flex-1 bg-gray-50 hover:bg-green-50 text-gray-700 hover:text-green-700 py-2 rounded-xl text-sm font-bold transition border border-gray-200">Manage</button><button onclick="openAddStudent('${c.id}')" class="w-10 bg-green-100 text-green-700 rounded-xl flex items-center justify-center hover:bg-green-200 transition"><i class="fas fa-plus"></i></button></div></div>` }).join('')}</div><div id="sub-view" class="mt-8 fade-in"></div>`;
+            }
+            
+            // 2. ATTENDANCE
+            else if(tab === 'attendance') {
+                const cOpts = myClasses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                area.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm border border-green-50 max-w-4xl"><div class="flex gap-4 mb-6"><select id="att-cid" class="border p-2 rounded-lg bg-gray-50">${cOpts}</select><input type="date" id="att-date" class="border p-2 rounded-lg" value="${new Date().toISOString().split('T')[0]}"><button onclick="loadAtt()" class="bg-green-600 text-white px-5 py-1.5 rounded-lg font-bold">Load</button></div><div id="att-list" class="min-h-[200px]"></div></div>`;
+            }
+            
+            // 3. MARKS
+            else if(tab === 'marks') {
+                const cOpts = myClasses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                area.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm border border-green-50"><div class="flex gap-4 mb-6"><select id="mk-cid" class="border p-3 rounded-lg bg-white">${cOpts}</select><input id="mk-ename" placeholder="Exam Name" class="border p-3 rounded-lg flex-1"><button onclick="loadSheet()" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold shadow-md">Load Sheet</button></div><div id="sheet-area"></div></div>`;
+            }
+            
+            // 4. EXAMS (Export/Edit/Delete)
+            else if(tab === 'exams') {
+                const myExams = db.results.filter(r => myClasses.some(c => c.id === r.classId));
+                const grouped = myExams.reduce((acc, curr) => { const key = curr.examName + curr.classId; if(!acc[key]) acc[key] = { name: curr.examName, classId: curr.classId, date: curr.date, status: curr.isPublished ? 'Published' : 'Pending', count: 0 }; acc[key].count++; return acc; }, {});
+                
+                area.innerHTML = `
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-xl text-slate-800 mb-6">Exam Management</h3>
+                    ${Object.keys(grouped).length === 0 ? '<p class="text-slate-400 text-center py-10">No exams created yet.</p>' : 
+                    `<div class="space-y-3">${Object.values(grouped).map(e => {
+                        const cName = db.classes.find(c=>c.id===e.classId)?.name;
+                        const statusClass = e.status === 'Published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                        return `
+                        <div class="flex justify-between items-center p-5 border rounded-xl hover:bg-gray-50 transition bg-white">
+                            <div><h4 class="font-bold text-slate-800 text-lg">${e.name}</h4><p class="text-xs text-gray-500 mt-1">${cName} • ${e.date}</p></div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs px-3 py-1.5 rounded-full font-bold ${statusClass}">${e.status}</span>
+                                <button onclick="exportExam('${e.name}', '${e.classId}', 'pdf')" class="w-10 h-10 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center justify-center" title="PDF"><i class="fas fa-file-pdf"></i></button>
+                                <button onclick="exportExam('${e.name}', '${e.classId}', 'excel')" class="w-10 h-10 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition flex items-center justify-center" title="Excel"><i class="fas fa-file-excel"></i></button>
+                                <button onclick="editExam('${e.name}', '${e.classId}')" class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteExam('${e.name}', '${e.classId}')" class="w-10 h-10 rounded-lg bg-gray-100 text-gray-600 hover:bg-red-500 hover:text-white transition flex items-center justify-center" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>`;
+                    }).join('')}</div>`}
+                </div>`;
+            }
+            
+            // 5. PROFILE
+            else if(tab === 'profile') {
+                area.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm max-w-xl mx-auto border border-green-50"><div class="text-center mb-8"><img id="pf-prev" src="${currentUser.img||''}" class="w-28 h-28 rounded-full mx-auto object-cover border-4 border-green-100 mb-4"><input type="file" class="text-xs" onchange="prevImg(this)"></div><div class="space-y-4"><input id="pf-nm" value="${currentUser.name}" class="w-full border p-3 rounded-lg"><input id="pf-ps" value="${currentUser.pass}" type="password" class="w-full border p-3 rounded-lg"><textarea id="pf-bio" class="w-full border p-3 rounded-lg" rows="3">${currentUser.bio||''}</textarea><button onclick="saveProf()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold shadow-lg">Update Profile</button></div></div>`;
+            }
+        }
+
+        // --- STUDENT MANAGEMENT (View/Export/Edit/Delete) ---
+        function viewClassStudents(cid) {
+            const db = getDB(); const students = db.students.filter(s => s.classId === cid).sort((a,b) => a.admNo.localeCompare(b.admNo, undefined, {numeric:true}));
+            el('sub-view').innerHTML = `
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 slide-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-lg text-slate-800">Student List (${students.length})</h3>
+                    <div class="flex gap-2">
+                         <button onclick="exportStudents('${cid}', 'pdf')" class="bg-red-100 text-red-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-200"><i class="fas fa-file-pdf"></i> PDF</button>
+                         <button onclick="exportStudents('${cid}', 'excel')" class="bg-green-100 text-green-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-green-200"><i class="fas fa-file-excel"></i> Excel</button>
+                         <button onclick="openAddStudent('${cid}')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700">+ Add</button>
+                    </div>
+                </div>
+                <div class="overflow-hidden rounded-xl border border-slate-200">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-50 text-slate-500 font-bold text-xs uppercase"><tr><th class="p-4">Adm No</th><th class="p-4">Name</th><th class="p-4">Gender</th><th class="p-4">DOB</th><th class="p-4 text-right">Actions</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">${students.map(s => `<tr class="hover:bg-green-50/30"><td class="p-4 font-mono text-green-600 font-bold">${s.admNo}</td><td class="p-4 font-bold text-slate-700">${s.name}</td><td class="p-4 text-slate-500">${s.gender||'-'}</td><td class="p-4 text-slate-400">${s.dob}</td><td class="p-4 text-right"><button onclick="editStudent('${s.id}')" class="text-blue-500 mr-3"><i class="fas fa-edit"></i></button><button onclick="deleteStudent('${s.id}', '${cid}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</tbody>
+                    </table>
+                </div>
+            </div>`;
+            el('sub-view').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function exportStudents(cid, format) {
+            const db = getDB();
+            const cls = db.classes.find(c => c.id === cid);
+            const students = db.students.filter(s => s.classId === cid).sort((a,b)=>a.admNo.localeCompare(b.admNo, undefined, {numeric:true}));
+            const data = students.map(s => ({ "Admission No": s.admNo, "Name": s.name, "Gender": s.gender, "DOB": s.dob }));
+
+            if (format === 'excel') {
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Students");
+                XLSX.writeFile(wb, `${cls.name}_Students.xlsx`);
+            } else {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text(`Student List - ${cls.name}`, 14, 15);
+                doc.autoTable({ head: [Object.keys(data[0])], body: data.map(Object.values), startY: 20 });
+                doc.save(`${cls.name}_Students.pdf`);
+            }
+        }
+
+        function openAddStudent(cid) { editStudentId=null; el('modal-stu').classList.remove('hidden'); el('active-cid-stu').value=cid; el('modal-stu-title').innerText="Register New Student"; el('btn-save-stu').innerText="Register Student"; el('new-s-name').value=''; el('new-s-adm').value=''; el('new-s-dob').value=''; }
+        function editStudent(id) { const db=getDB(); const s=db.students.find(x=>x.id===id); if(s){ editStudentId=id; el('modal-stu').classList.remove('hidden'); el('active-cid-stu').value=s.classId; el('modal-stu-title').innerText="Edit Student"; el('btn-save-stu').innerText="Update Student"; el('new-s-name').value=s.name; el('new-s-adm').value=s.admNo; el('new-s-dob').value=s.dob; el('new-s-gen').value=s.gender; } }
+        function saveStudentData() { const name=el('new-s-name').value; const adm=el('new-s-adm').value; const dob=el('new-s-dob').value; const cid=el('active-cid-stu').value; const gender=el('new-s-gen').value; if(!name||!adm||!dob) return alert("All fields required"); const db=getDB(); if(editStudentId){ const idx=db.students.findIndex(s=>s.id===editStudentId); if(idx>-1){ if(db.students[idx].admNo!==adm && db.students.some(s=>s.admNo===adm)) return alert("Adm No Exists!"); db.students[idx]={...db.students[idx], name, admNo:adm, dob, gender}; showToast("Updated"); } } else { if(db.students.some(s=>s.admNo===adm)) return alert("Exists!"); db.students.push({id:genId(), name, admNo:adm, dob, gender, classId:cid}); showToast("Added"); } saveDB(db); el('modal-stu').classList.add('hidden'); viewClassStudents(cid); }
+        function deleteStudent(id, cid) { if(confirm("Delete?")) { const db=getDB(); db.students=db.students.filter(s=>s.id!==id); saveDB(db); showToast("Deleted"); viewClassStudents(cid); } }
+
+        // --- ATTENDANCE ---
+        function loadAtt() { const cid=el('att-cid').value; const db=getDB(); const students=db.students.filter(s=>s.classId===cid).sort((a,b)=>a.admNo.localeCompare(b.admNo, undefined, {numeric:true})); el('att-list').innerHTML=students.length?`<div class="max-h-[400px] overflow-y-auto border rounded-xl"><table class="w-full text-sm text-left"><thead class="bg-green-50 sticky top-0"><tr><th class="p-4">Student</th><th class="p-4 text-center">Status</th></tr></thead><tbody class="divide-y divide-gray-50">${students.map(s=>`<tr class="hover:bg-green-50/40"><td class="p-4 font-bold">${s.name} <span class="text-xs text-gray-400 block">${s.admNo}</span></td><td class="p-4 text-center"><select class="att-val border p-2 rounded-lg bg-white text-xs font-bold" data-sid="${s.id}"><option value="P">Present</option><option value="A">Absent</option></select></td></tr>`).join('')}</tbody></table></div><button onclick="saveAtt()" class="mt-4 w-full bg-green-600 text-white py-3 rounded-lg font-bold">Save</button>`:'<p>No students.</p>'; }
+        function saveAtt() { const db=getDB(); let c=0; document.querySelectorAll('.att-val').forEach(i=>{ const s=db.students.find(x=>x.id===i.dataset.sid); if(s){ if(!s.attendance)s.attendance={total:0,present:0}; s.attendance.total++; if(i.value==='P')s.attendance.present++; c++; } }); saveDB(db); showToast(`Saved for ${c} students`); }
+
+        // --- MARKS & EXPORT ---
+        function loadSheet(isEdit=false) {
+            const cid=el('mk-cid').value; const ename=el('mk-ename').value; if(!cid) return; const db=getDB(); const s=db.students.filter(x=>x.classId===cid).sort((a,b)=>a.admNo.localeCompare(b.admNo,undefined,{numeric:true})); const sub=db.subjects.filter(x=>x.classId===cid);
+            if(!s.length) return el('sheet-area').innerHTML='No students.'; if(!sub.length) return el('sheet-area').innerHTML='No subjects.';
+            let existingMarks=[]; if(ename) existingMarks=db.results.filter(r=>r.examName===ename && r.classId===cid);
+            let h=`<table class="w-full text-sm border mt-4 rounded-lg overflow-hidden"><thead class="bg-blue-50 text-blue-900"><tr><th class="p-3 text-left">Name</th>${sub.map(x=>`<th class="p-3 text-center">${x.name}</th>`).join('')}</tr></thead><tbody>`;
+            h+=s.map(x=>{ const saved=existingMarks.find(r=>r.studentId===x.id); const scores=saved?saved.marks:{}; return `<tr><td class="p-3 border font-bold">${x.name}</td>${sub.map(b=>`<td class="p-2 border text-center"><input type="number" class="w-16 p-1 mk-inp border rounded text-center" data-sid="${x.id}" data-sub="${b.name}" data-pass="${b.passMark}" value="${scores[b.name]!==undefined?scores[b.name]:''}"></td>`).join('')}</tr>`; }).join('');
+            el('sheet-area').innerHTML=h+`</tbody></table><button onclick="publishResult('${cid}')" class="mt-4 bg-blue-600 text-white px-6 py-3 rounded font-bold w-full">Submit for Approval</button>`;
+        }
+
+        function publishResult(cid) {
+            const db=getDB(); const ename=el('mk-ename').value; if(!ename) return alert('Enter Exam Name');
+            // Remove old entries if editing
+            db.results = db.results.filter(r => !(r.examName === ename && r.classId === cid));
+            const students=db.students.filter(s=>s.classId===cid); const subjects=db.subjects.filter(s=>s.classId===cid);
+            students.forEach(s=>{ let marks={}; let total=0; let pass=true; subjects.forEach(sub=>{ const inp=document.querySelector(`.mk-inp[data-sid="${s.id}"][data-sub="${sub.name}"]`); const v=parseInt(inp?inp.value:0)||0; marks[sub.name]=v; total+=v; if(v<parseInt(sub.passMark))pass=false; }); db.results.push({id:genId(), examName:ename, studentId:s.id, marks, total, status:pass?'PASS':'FAIL', date:new Date().toLocaleDateString(), isPublished:false, classId:cid}); });
+            saveDB(db); showToast('Sent for Approval'); renderTab('home');
+        }
+
+        function editExam(name, cid) { renderTab('marks'); setTimeout(() => { el('mk-cid').value=cid; el('mk-ename').value=name; loadSheet(true); }, 100); }
+        function deleteExam(name, cid) { if(!confirm("Delete exam?")) return; const db=getDB(); db.results=db.results.filter(r=>!(r.examName===name && r.classId===cid)); saveDB(db); showToast("Deleted"); renderTab('exams'); }
+
+        function exportExam(name, cid, format) {
+            const db=getDB(); const results=db.results.filter(r=>r.examName===name && r.classId===cid);
+            const cls=db.classes.find(c=>c.id===cid);
+            if(!results.length) return showToast("No data to export", "error");
+
+            // Flatten data for export
+            const data = results.map(r => {
+                const s = db.students.find(st => st.id === r.studentId);
+                let row = { "Name": s.name, "Adm No": s.admNo };
+                Object.assign(row, r.marks); // Spread marks into columns
+                row["Total"] = r.total;
+                row["Status"] = r.status;
+                return row;
+            });
+
+            if(format === 'excel') {
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Results");
+                XLSX.writeFile(wb, `${cls.name}_${name}_Results.xlsx`);
+            } else {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text(`${cls.name} - ${name} Results`, 14, 15);
+                const headers = Object.keys(data[0]);
+                const rows = data.map(Object.values);
+                doc.autoTable({ head: [headers], body: rows, startY: 20 });
+                doc.save(`${cls.name}_${name}_Results.pdf`);
+            }
+        }
+
+        // --- PROFILE ---
+        function prevImg(inp) { const r=new FileReader(); r.onload=e=>el('pf-prev').src=e.target.result; if(inp.files[0]) r.readAsDataURL(inp.files[0]); }
+        function saveProf() { const db=getDB(); const i=db.teachers.findIndex(t=>t.id===currentUser.id); if(i>-1){ db.teachers[i].name=el('pf-nm').value; db.teachers[i].pass=el('pf-ps').value; db.teachers[i].bio=el('pf-bio').value; db.teachers[i].img=el('pf-prev').src; currentUser=db.teachers[i]; const pIdx=db.website.faculty.findIndex(f=>f.linkedId===currentUser.id); const pd={name:currentUser.name, role:"Faculty", img:currentUser.img, desc:currentUser.bio, linkedId:currentUser.id}; if(pIdx>-1)db.website.faculty[pIdx]=pd; else db.website.faculty.push(pd); saveDB(db); showToast('Synced'); } }
+    </script>
+</body>
+</html>
