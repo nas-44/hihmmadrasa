@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- HTML2Canvas for Image Download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <!-- React & Firebase -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script type="importmap">
@@ -47,10 +50,44 @@
                 print-color-adjust: exact; 
             }
         }
+
+        /* Error Overlay */
+        #debug-error {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95); color: #dc2626; z-index: 9999;
+            padding: 2rem; overflow: auto; font-family: monospace;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <!-- Fallback / Loading State -->
+    <div id="root" class="min-h-screen flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 mb-4"></div>
+        <h2 class="text-xl font-bold text-slate-600">Loading Varisanghya...</h2>
+        <p class="text-sm text-slate-400 mt-2">If this takes longer than 5 seconds, check your connection.</p>
+    </div>
+
+    <!-- Error Container -->
+    <div id="debug-error">
+        <div class="max-w-xl mx-auto mt-20">
+            <h2 class="text-3xl font-bold mb-4">Something went wrong</h2>
+            <p class="mb-4 text-slate-600">Please check the console for details or report this error.</p>
+            <div id="error-text" class="bg-red-50 p-4 rounded border border-red-200 text-left mb-6 whitespace-pre-wrap"></div>
+            <button onclick="window.location.reload()" class="px-6 py-3 bg-teal-600 text-white rounded-full font-bold hover:bg-teal-700 transition">Reload Page</button>
+        </div>
+    </div>
+
+    <script>
+        // Catch Global Errors to prevent blank screen
+        window.onerror = function(message, source, lineno, colno, error) {
+            document.getElementById('root').style.display = 'none';
+            document.getElementById('debug-error').style.display = 'block';
+            document.getElementById('error-text').textContent = `Error: ${message}\nLine: ${lineno}`;
+            console.error(error);
+        };
+    </script>
 
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -58,7 +95,7 @@
         import { initializeApp } from 'firebase/app';
         import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, where, getDocs } from 'firebase/firestore';
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-        import { Search, Plus, User, Users, Printer, CreditCard, X, Trash2, ChevronRight, LayoutGrid, Hash, UserPlus, Download, Upload, TrendingUp, DollarSign, Activity, Edit2, MinusCircle, Cloud, AlertTriangle, Save, Home, FileText } from 'lucide-react';
+        import { Search, Plus, User, Users, Printer, CreditCard, X, Trash2, ChevronRight, LayoutGrid, Hash, UserPlus, Download, Upload, TrendingUp, TrendingDown, IndianRupee, Activity, Edit2, MinusCircle, Cloud, AlertTriangle, Save, Home, FileText, Calendar, Wallet, History, MessageCircle, Share2, ImageDown, PieChart, FileSpreadsheet } from 'lucide-react';
 
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -76,85 +113,218 @@
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-        } catch (error) { console.error("Firebase Init Error:", error); }
+        } catch (error) { 
+            console.error("Firebase Init Error:", error);
+            throw new Error("Firebase Initialization Failed: " + error.message);
+        }
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
+        const CLASS_OPTIONS = Array.from({length: 12}, (_, i) => i + 1);
 
         // --- MAIN APP COMPONENT ---
         function VarisanghyaApp() {
             const [user, setUser] = useState(null);
             const [families, setFamilies] = useState([]);
+            const [expenses, setExpenses] = useState([]);
             const [loading, setLoading] = useState(true);
             const [importLoading, setImportLoading] = useState(false);
             const [view, setView] = useState('dashboard');
             const [selectedFamily, setSelectedFamily] = useState(null);
-            const [activeStudentId, setActiveStudentId] = useState(null);
+            
+            // For Payment Receipt
             const [showReceipt, setShowReceipt] = useState(false);
             const [currentReceipt, setCurrentReceipt] = useState(null);
             const [searchTerm, setSearchTerm] = useState('');
+            const [errorMsg, setErrorMsg] = useState(null);
             
             // Edit States
             const [editFamilyMode, setEditFamilyMode] = useState(false);
-            const [editStudentMode, setEditStudentMode] = useState(false);
+            const [editingStudentId, setEditingStudentId] = useState(null); 
             const [createStudentsList, setCreateStudentsList] = useState([
-                { id: 'init', studentName: '', regNo: '', year: new Date().getFullYear() }
+                { id: 'init', studentName: '', regNo: '', year: new Date().getFullYear(), studentClass: '' }
             ]);
             
+            // Dashboard & Expense States
+            const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
+            const [showExpenseModal, setShowExpenseModal] = useState(false);
+
             const fileInputRef = useRef(null);
 
             // --- AUTH & SYNC ---
             useEffect(() => {
                 if (!auth) return;
-                signInAnonymously(auth).catch(console.error);
-                onAuthStateChanged(auth, u => setUser(u));
+                const unsubAuth = onAuthStateChanged(auth, u => {
+                    setUser(u);
+                    if (!u) {
+                        signInAnonymously(auth).catch(e => {
+                            console.error(e);
+                            setErrorMsg("Auth Error: " + e.message + ". Check Firebase Console Authorized Domains.");
+                            setLoading(false);
+                        });
+                    }
+                });
+                return () => unsubAuth();
             }, []);
 
             useEffect(() => {
                 if (!user || !db) return;
-                const unsub = onSnapshot(collection(db, 'families'), 
-                    (snap) => {
-                        setFamilies(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                        setLoading(false);
-                    },
-                    (err) => { console.error(err); setLoading(false); }
-                );
-                return () => unsub();
+                try {
+                    // Families Sync
+                    const unsubFam = onSnapshot(collection(db, 'families'), 
+                        (snap) => {
+                            setFamilies(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                            setLoading(false);
+                        },
+                        (err) => { 
+                            console.error(err); 
+                            setErrorMsg("Sync Error: " + err.message); 
+                            setLoading(false); 
+                        }
+                    );
+                    
+                    // Expenses Sync
+                    const unsubExp = onSnapshot(collection(db, 'expenses'),
+                        (snap) => {
+                            setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                        },
+                        (err) => console.error("Expense Sync Error", err)
+                    );
+
+                    return () => { unsubFam(); unsubExp(); };
+                } catch (e) {
+                    setErrorMsg("DB Init Error: " + e.message);
+                    setLoading(false);
+                }
             }, [user]);
 
             // --- STATS & FILTERS ---
             const stats = useMemo(() => {
-                let fams = families.length, studs = 0, rev = 0, recent = [];
+                let fams = families.length;
+                let studs = 0;
+                let rev = 0; 
+                let pendingTotal = 0;
+                let recent = [];
+                let expTotal = 0;
+
+                // Process Income
                 families.forEach(f => {
-                    if (f.students) {
-                        studs += f.students.length;
-                        f.students.forEach(s => {
-                            if (s.payments) s.payments.forEach(p => {
-                                rev += Number(p.amount) || 0;
-                                recent.push({...p, studentName: s.studentName, familyName: f.guardianName, cardNo: f.familyRegNo});
+                    if (f.students) studs += f.students.length;
+                    if (f.pendingBalance) pendingTotal += Number(f.pendingBalance) || 0;
+                    
+                    if (f.payments) {
+                        f.payments.forEach(p => {
+                            rev += Number(p.amount) || 0;
+                            recent.push({
+                                ...p, 
+                                type: 'income',
+                                familyName: f.guardianName, 
+                                cardNo: f.familyRegNo,
+                                studentName: p.forStudent || 'Family Payment',
+                                phone: f.phone 
                             });
                         });
                     }
                 });
-                return { fams, studs, rev, recent: recent.sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5) };
-            }, [families]);
+
+                // Process Expenses
+                expenses.forEach(e => {
+                    expTotal += Number(e.amount) || 0;
+                });
+
+                // Calculate Net
+                const netBalance = rev - expTotal;
+
+                return { 
+                    fams, 
+                    studs, 
+                    rev, 
+                    expTotal,
+                    netBalance,
+                    pendingTotal, 
+                    recent: recent.sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5) 
+                };
+            }, [families, expenses]);
+
+            const monthlyStats = useMemo(() => {
+                if(!reportMonth) return { income: 0, expense: 0, net: 0, transactions: [] };
+                
+                let mIncome = 0;
+                let mExpense = 0;
+                let mTrans = [];
+
+                // Filter Income
+                families.forEach(f => {
+                    if(f.payments) {
+                        f.payments.forEach(p => {
+                            if(p.date.startsWith(reportMonth)) {
+                                mIncome += Number(p.amount) || 0;
+                                mTrans.push({
+                                    date: p.date,
+                                    type: 'Income',
+                                    desc: `Payment: ${f.guardianName} (${f.familyRegNo})`,
+                                    amount: p.amount,
+                                    isExpense: false
+                                });
+                            }
+                        });
+                    }
+                });
+
+                // Filter Expenses
+                expenses.forEach(e => {
+                    if(e.date.startsWith(reportMonth)) {
+                        mExpense += Number(e.amount) || 0;
+                        mTrans.push({
+                            id: e.id,
+                            date: e.date,
+                            type: 'Expense',
+                            desc: e.description,
+                            amount: e.amount,
+                            isExpense: true
+                        });
+                    }
+                });
+
+                // Sort by date
+                mTrans.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+                return {
+                    income: mIncome,
+                    expense: mExpense,
+                    net: mIncome - mExpense,
+                    transactions: mTrans
+                };
+
+            }, [families, expenses, reportMonth]);
 
             const filteredFamilies = useMemo(() => {
-                if (!searchTerm) return families;
-                const q = searchTerm.toLowerCase();
-                return families.filter(f => 
-                    f.guardianName?.toLowerCase().includes(q) || 
-                    f.familyRegNo?.toLowerCase().includes(q) ||
-                    f.students?.some(s => s.studentName.toLowerCase().includes(q))
-                );
+                let data = families;
+                
+                // 1. Filter
+                if (searchTerm) {
+                    const q = searchTerm.toLowerCase();
+                    data = data.filter(f => 
+                        f.guardianName?.toLowerCase().includes(q) || 
+                        f.familyRegNo?.toString().toLowerCase().includes(q) ||
+                        f.students?.some(s => s.studentName.toLowerCase().includes(q))
+                    );
+                }
+
+                // 2. Sort (Natural Sort by Card No)
+                return [...data].sort((a, b) => {
+                    const idA = a.familyRegNo?.toString() || '';
+                    const idB = b.familyRegNo?.toString() || '';
+                    return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
+                });
             }, [families, searchTerm]);
 
-            // --- IMPORT/EXPORT ---
+            // --- EXPORT/IMPORT ---
             const handleExport = () => {
-                let csv = "FamilyCardNo,GuardianName,Phone,StudentName,StudentRegNo,Year\n";
+                let csv = "FamilyCardNo,GuardianName,Phone,PendingBalance,StudentName,StudentClass,StudentRegNo,Year\n";
                 families.forEach(f => {
-                    const p = `${f.familyRegNo},${f.guardianName},${f.phone || ''}`;
-                    if (!f.students?.length) csv += `${p},,,\n`;
-                    else f.students.forEach(s => csv += `${p},${s.studentName},${s.regNo || ''},${s.year || ''}\n`);
+                    const p = `${f.familyRegNo},${f.guardianName},${f.phone || ''},${f.pendingBalance || 0}`;
+                    if (!f.students?.length) csv += `${p},,,,\n`;
+                    else f.students.forEach(s => csv += `${p},${s.studentName},${s.studentClass || ''},${s.regNo || ''},${s.year || ''}\n`);
                 });
                 const link = document.createElement("a");
                 link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
@@ -162,68 +332,68 @@
                 link.click();
             };
 
+            const handleDownloadReport = (type) => {
+                let csv = "Date,Type,Description,Amount\n";
+                let dataToExport = [];
+
+                if(type === 'monthly') {
+                    dataToExport = monthlyStats.transactions;
+                } else {
+                    families.forEach(f => {
+                        if(f.payments) f.payments.forEach(p => dataToExport.push({
+                            date: p.date, type: 'Income', desc: `Payment: ${f.guardianName}`, amount: p.amount
+                        }));
+                    });
+                    expenses.forEach(e => {
+                        dataToExport.push({
+                            date: e.date, type: 'Expense', desc: e.description, amount: e.amount
+                        });
+                    });
+                    dataToExport.sort((a,b) => new Date(b.date) - new Date(a.date));
+                }
+
+                dataToExport.forEach(row => {
+                    csv += `${row.date},${row.type},"${row.desc}",${row.amount}\n`;
+                });
+
+                const link = document.createElement("a");
+                link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
+                link.download = `financial_report_${type}.csv`;
+                link.click();
+            };
+
             const handleTemplateDownload = () => {
-                let csv = "FamilyCardNo,GuardianName,Phone,StudentName,StudentRegNo,Year\n";
-                csv += "1001,John Doe,9876543210,Alice Doe,ADM001,2024\n";
-                csv += "1001,John Doe,9876543210,Bob Doe,ADM002,2024\n";
+                let csv = "FamilyCardNo,GuardianName,Phone,PendingBalance,StudentName,StudentClass,StudentRegNo,Year\n";
+                csv += "1001,John Doe,9876543210,500,Alice Doe,5,ADM001,2024\n";
                 const link = document.createElement("a");
                 link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
                 link.download = "import_template.csv";
                 link.click();
             }
-
             const handleImport = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
-                reader.onload = async (event) => {
-                    await processImport(event.target.result);
-                    e.target.value = '';
-                };
+                reader.onload = async (event) => { await processImport(event.target.result); e.target.value = ''; };
                 reader.readAsText(file);
             };
-
             const processImport = async (csv) => {
                 setImportLoading(true);
                 try {
-                    // Handle CRLF (Windows) and LF (Unix) line endings
                     const lines = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-                    
-                    if(lines.length < 2) throw new Error("File is empty or missing header");
-
+                    if(lines.length < 2) throw new Error("File is empty");
                     const map = new Map();
-                    // Start from 1 to skip header
                     lines.slice(1).forEach(line => {
                         if(!line.trim()) return;
-                        // Simple CSV Split
                         const cols = line.split(',');
-                        if(cols.length < 2) return; // Skip invalid lines
-
-                        const card = cols[0]?.trim();
-                        const guard = cols[1]?.trim();
-                        const phone = cols[2]?.trim();
-                        const sName = cols[3]?.trim();
-                        const sReg = cols[4]?.trim();
-                        const sYear = cols[5]?.trim();
-
+                        if(cols.length < 2) return; 
+                        const card = cols[0]?.trim(); const guard = cols[1]?.trim(); const phone = cols[2]?.trim(); const pending = cols[3]?.trim(); const sName = cols[4]?.trim(); const sClass = cols[5]?.trim(); const sReg = cols[6]?.trim(); const sYear = cols[7]?.trim();
                         if(!card || !guard) return;
-
-                        if(!map.has(card)) map.set(card, { familyRegNo: card, guardianName: guard, phone: phone || '', students: [] });
-                        
-                        if(sName) {
-                           map.get(card).students.push({ 
-                               id: generateId(), 
-                               studentName: sName, 
-                               regNo: sReg||'', 
-                               year: sYear||new Date().getFullYear().toString(), 
-                               payments: [] 
-                           });
-                        }
+                        if(!map.has(card)) map.set(card, { familyRegNo: card, guardianName: guard, phone: phone||'', pendingBalance: pending||0, students: [], payments: [] });
+                        if(sName) map.get(card).students.push({ id: generateId(), studentName: sName, studentClass: sClass||'', regNo: sReg||'', year: sYear||new Date().getFullYear().toString() });
                     });
-
-                    if(map.size === 0) { alert("No valid data found in CSV. Please ensure correct format."); setImportLoading(false); return; }
-                    if(!confirm(`Found ${map.size} families. Proceed with Import?`)) { setImportLoading(false); return; }
-
+                    if(map.size === 0) { alert("No data."); setImportLoading(false); return; }
+                    if(!confirm(`Import ${map.size} families?`)) { setImportLoading(false); return; }
                     let added = 0, updated = 0;
                     for (const data of map.values()) {
                          const q = query(collection(db, 'families'), where('familyRegNo', '==', data.familyRegNo));
@@ -231,41 +401,52 @@
                          if(!snap.empty) {
                            const docRef = doc(db, 'families', snap.docs[0].id);
                            const existing = snap.docs[0].data().students || [];
-                           
-                           // Filter duplicates based on name
                            const newSt = data.students.filter(n => !existing.some(e => e.studentName.toLowerCase() === n.studentName.toLowerCase()));
-                           
-                           if(newSt.length > 0) { 
-                               await updateDoc(docRef, { students: [...existing, ...newSt] }); 
-                               updated++; 
-                           }
-                         } else {
-                           await addDoc(collection(db, 'families'), { ...data, createdAt: serverTimestamp() }); added++;
-                         }
+                           let updatePayload = {};
+                           if(data.pendingBalance) updatePayload.pendingBalance = data.pendingBalance;
+                           if(newSt.length > 0) updatePayload.students = [...existing, ...newSt];
+                           if(Object.keys(updatePayload).length > 0) { await updateDoc(docRef, updatePayload); updated++; }
+                         } else { await addDoc(collection(db, 'families'), { ...data, createdAt: serverTimestamp() }); added++; }
                     }
-                    alert(`Import Complete!\nCreated: ${added}\nUpdated: ${updated}`);
-                } catch(err) { console.error(err); alert("Import Failed: " + err.message); }
+                    alert(`Imported: ${added} New, ${updated} Updated`);
+                } catch(err) { console.error(err); alert("Import Failed"); }
                 setImportLoading(false);
             };
 
-            // --- CRUD HANDLERS ---
+            // --- EXPENSE HANDLERS ---
+            const handleAddExpense = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                try {
+                    await addDoc(collection(db, 'expenses'), {
+                        description: fd.get('desc'),
+                        amount: fd.get('amount'),
+                        date: fd.get('date'),
+                        category: fd.get('cat'),
+                        createdAt: serverTimestamp()
+                    });
+                    setShowExpenseModal(false);
+                } catch(e) { alert("Error adding expense"); }
+            };
+
+            const handleDeleteExpense = async (id) => {
+                if(confirm("Delete this expense record?")) {
+                    await deleteDoc(doc(db, 'expenses', id));
+                }
+            };
+
+            // --- CRUD HANDLERS (Families) ---
             const handleCreateFamily = async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
                 const students = createStudentsList.filter(s => s.studentName.trim()).map(s => ({
-                    id: generateId(), studentName: s.studentName, regNo: s.regNo || '', year: s.year || '', payments: []
+                    id: generateId(), studentName: s.studentName, regNo: s.regNo || '', year: s.year || '', studentClass: s.studentClass || ''
                 }));
-                
                 try {
                     await addDoc(collection(db, 'families'), {
-                        guardianName: fd.get('guardianName'),
-                        familyRegNo: fd.get('familyRegNo'),
-                        phone: fd.get('phone'),
-                        students,
-                        createdAt: serverTimestamp()
+                        guardianName: fd.get('guardianName'), familyRegNo: fd.get('familyRegNo'), phone: fd.get('phone'), pendingBalance: fd.get('pendingBalance') || 0, students, payments: [], createdAt: serverTimestamp()
                     });
-                    setView('home');
-                    setCreateStudentsList([{ id: 'init', studentName: '', regNo: '', year: new Date().getFullYear() }]);
+                    setView('home'); setCreateStudentsList([{ id: 'init', studentName: '', regNo: '', year: new Date().getFullYear(), studentClass: '' }]);
                 } catch(e) { alert("Error: " + e.message); }
             };
 
@@ -273,75 +454,75 @@
                 e.preventDefault();
                 const fd = new FormData(e.target);
                 try {
-                    await updateDoc(doc(db, 'families', selectedFamily.id), {
-                        guardianName: fd.get('gName'),
-                        familyRegNo: fd.get('cNo'),
-                        phone: fd.get('phone')
-                    });
-                    setEditFamilyMode(false);
-                    setSelectedFamily({...selectedFamily, guardianName: fd.get('gName'), familyRegNo: fd.get('cNo'), phone: fd.get('phone')});
+                    const updateData = { guardianName: fd.get('gName'), familyRegNo: fd.get('cNo'), phone: fd.get('phone'), pendingBalance: fd.get('pBal') };
+                    await updateDoc(doc(db, 'families', selectedFamily.id), updateData);
+                    setEditFamilyMode(false); setSelectedFamily({...selectedFamily, ...updateData});
                 } catch(e) { alert("Update failed"); }
             };
 
             const handleAddStudent = async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
-                const newS = { id: generateId(), studentName: fd.get('sName'), regNo: fd.get('sReg'), year: fd.get('sYear'), payments: [] };
+                const newS = { id: generateId(), studentName: fd.get('sName'), regNo: fd.get('sReg'), year: fd.get('sYear'), studentClass: fd.get('sClass') };
                 const updated = [...(selectedFamily.students || []), newS];
                 await updateDoc(doc(db, 'families', selectedFamily.id), { students: updated });
-                setSelectedFamily({ ...selectedFamily, students: updated });
-                e.target.reset();
+                setSelectedFamily({ ...selectedFamily, students: updated }); e.target.reset();
             };
 
             const handleEditStudent = async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
-                const updated = selectedFamily.students.map(s => s.id === activeStudentId ? {
-                    ...s, studentName: fd.get('sName'), regNo: fd.get('sReg'), year: fd.get('sYear')
-                } : s);
+                const updated = selectedFamily.students.map(s => s.id === editingStudentId ? { ...s, studentName: fd.get('sName'), regNo: fd.get('sReg'), year: fd.get('sYear'), studentClass: fd.get('sClass') } : s);
                 await updateDoc(doc(db, 'families', selectedFamily.id), { students: updated });
-                setSelectedFamily({ ...selectedFamily, students: updated });
-                setEditStudentMode(false);
+                setSelectedFamily({ ...selectedFamily, students: updated }); setEditingStudentId(null);
             };
 
             const handleDeleteStudent = async (sid) => {
-                if(!confirm("Delete this student?")) return;
+                if(!confirm("Delete?")) return;
                 const updated = selectedFamily.students.filter(s => s.id !== sid);
                 await updateDoc(doc(db, 'families', selectedFamily.id), { students: updated });
                 setSelectedFamily({ ...selectedFamily, students: updated });
-                setActiveStudentId(null);
             };
 
             const handlePayment = async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
-                const pay = { id: generateId(), amount: fd.get('amt'), month: fd.get('mon'), receiptNo: fd.get('rec'), date: fd.get('date') };
-                const updated = selectedFamily.students.map(s => s.id === activeStudentId ? { ...s, payments: [...(s.payments||[]), pay] } : s);
-                await updateDoc(doc(db, 'families', selectedFamily.id), { students: updated });
-                setSelectedFamily({ ...selectedFamily, students: updated });
-                
-                const st = selectedFamily.students.find(s => s.id === activeStudentId);
-                setCurrentReceipt({ ...pay, studentName: st.studentName, guardianName: selectedFamily.guardianName, familyRegNo: selectedFamily.familyRegNo });
-                setShowReceipt(true);
-                e.target.reset();
+                const pay = { id: generateId(), amount: fd.get('amt'), month: fd.get('mon'), receiptNo: fd.get('rec'), date: fd.get('date'), forStudent: fd.get('forStudent') || null };
+                const updatedPayments = [...(selectedFamily.payments || []), pay];
+                await updateDoc(doc(db, 'families', selectedFamily.id), { payments: updatedPayments });
+                setSelectedFamily({ ...selectedFamily, payments: updatedPayments });
+                setCurrentReceipt({ ...pay, studentName: pay.forStudent || 'Family Account', guardianName: selectedFamily.guardianName, familyRegNo: selectedFamily.familyRegNo });
+                setShowReceipt(true); e.target.reset();
             };
 
             const handleDeletePayment = async (pid) => {
-                if(!confirm("Delete this receipt?")) return;
-                const updated = selectedFamily.students.map(s => s.id === activeStudentId ? { ...s, payments: s.payments.filter(p => p.id !== pid) } : s);
-                await updateDoc(doc(db, 'families', selectedFamily.id), { students: updated });
-                setSelectedFamily({ ...selectedFamily, students: updated });
+                if(!confirm("Delete?")) return;
+                const updated = (selectedFamily.payments || []).filter(p => p.id !== pid);
+                await updateDoc(doc(db, 'families', selectedFamily.id), { payments: updated });
+                setSelectedFamily({ ...selectedFamily, payments: updated });
             };
 
             const handleDeleteFamily = async () => {
-                if(confirm("Delete entire family account?")) {
-                    await deleteDoc(doc(db, 'families', selectedFamily.id));
-                    setView('home'); setSelectedFamily(null);
-                }
+                if(confirm("Delete entire account?")) { await deleteDoc(doc(db, 'families', selectedFamily.id)); setView('home'); setSelectedFamily(null); }
+            };
+
+            const handleWhatsAppShare = (receipt, phone) => {
+                const message = `*HIHSM Receipt*\nReceipt No: ${receipt.receiptNo}\nAmount: ₹${receipt.amount}\nDate: ${receipt.date}\nStudent: ${receipt.studentName}\nThank you!`;
+                const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+                const url = (cleanPhone.length >= 10) ? `https://wa.me/${cleanPhone.length===10?'91'+cleanPhone:cleanPhone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
+                window.open(url, '_blank');
+            };
+
+            const handleDownloadImage = async () => {
+                const el = document.getElementById('receipt-print');
+                if(!el) return;
+                const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
+                const link = document.createElement('a'); link.download = `Receipt_${currentReceipt.receiptNo}.png`; link.href = canvas.toDataURL('image/png'); link.click();
             };
 
             // Loading / UI
-            if (loading) return <div className="h-screen flex flex-col items-center justify-center text-teal-600 font-bold bg-slate-50"><Activity className="animate-spin mb-4" />Loading Portal...</div>;
+            if (errorMsg) return <div className="h-screen flex flex-col items-center justify-center bg-red-50 p-4"><AlertTriangle size={48} className="text-red-500 mb-4" /><h2 className="text-xl font-bold text-red-700 mb-2">Error</h2><p>{errorMsg}</p><button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-red-600 text-white rounded">Retry</button></div>;
+            if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-slate-50"><Activity className="animate-spin text-teal-600 mb-4" size={32} /><p className="text-slate-500 font-bold">Connecting...</p></div>;
 
             return (
                 <div className="min-h-screen flex flex-col md:flex-row font-sans text-slate-700">
@@ -353,18 +534,10 @@
                             <div><h1 className="font-bold text-lg leading-none">Varisanghya</h1><p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Manager</p></div>
                         </div>
                         <nav className="p-4 space-y-2 flex-1">
-                            <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='dashboard' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}>
-                                <LayoutGrid size={18} /> Dashboard
-                            </button>
-                            <button onClick={() => setView('home')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='home'||view==='details' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}>
-                                <Users size={18} /> Accounts
-                            </button>
-                            <button onClick={() => setView('add')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='add' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}>
-                                <Plus size={18} /> New Family
-                            </button>
-                            <a href="admin.html" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition mt-8">
-                                <Home size={18} /> Back to Admin
-                            </a>
+                            <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='dashboard' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><LayoutGrid size={18} /> Dashboard</button>
+                            <button onClick={() => setView('home')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='home'||view==='details' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><Users size={18} /> Accounts</button>
+                            <button onClick={() => setView('add')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='add' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><Plus size={18} /> New Family</button>
+                            <a href="admin.html" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition mt-8"><Home size={18} /> Back to Admin</a>
                         </nav>
                     </aside>
 
@@ -386,38 +559,74 @@
                             {/* DASHBOARD VIEW */}
                             {view === 'dashboard' && (
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                         <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-teal-400">
-                                            <div className="p-3 bg-teal-50 text-teal-600 rounded-xl"><Users /></div>
-                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Total Families</p><h3 className="text-3xl font-black text-slate-700">{stats.fams}</h3></div>
+                                            <div className="p-3 bg-teal-50 text-teal-600 rounded-xl"><IndianRupee /></div>
+                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Gross Income</p><h3 className="text-3xl font-black text-slate-700">₹{stats.rev.toLocaleString()}</h3></div>
                                         </div>
-                                        <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-pink-400">
-                                            <div className="p-3 bg-pink-50 text-pink-600 rounded-xl"><UserPlus /></div>
-                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Students</p><h3 className="text-3xl font-black text-slate-700">{stats.studs}</h3></div>
+                                        <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-red-400">
+                                            <div className="p-3 bg-red-50 text-red-600 rounded-xl"><TrendingDown /></div>
+                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Total Expenses</p><h3 className="text-3xl font-black text-slate-700">₹{stats.expTotal.toLocaleString()}</h3></div>
                                         </div>
-                                        <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-amber-400">
-                                            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl"><DollarSign /></div>
-                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Revenue</p><h3 className="text-3xl font-black text-slate-700">₹{stats.rev.toLocaleString()}</h3></div>
+                                        <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-green-400">
+                                            <div className="p-3 bg-green-50 text-green-600 rounded-xl"><Wallet /></div>
+                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Net Balance</p><h3 className="text-3xl font-black text-slate-700">₹{stats.netBalance.toLocaleString()}</h3></div>
+                                        </div>
+                                        <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-orange-400">
+                                            <div className="p-3 bg-orange-50 text-orange-600 rounded-xl"><History /></div>
+                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Pending Due</p><h3 className="text-3xl font-black text-slate-700">₹{stats.pendingTotal.toLocaleString()}</h3></div>
                                         </div>
                                     </div>
 
+                                    {/* Monthly Reports Section */}
                                     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                                        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                                            <h3 className="font-bold text-lg text-slate-700">Recent Transactions</h3>
-                                            <button onClick={() => setView('home')} className="text-xs font-bold text-teal-600 hover:underline">View All</button>
+                                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                            <div className="flex items-center gap-4">
+                                                <h3 className="font-bold text-lg text-slate-700">Financial Overview</h3>
+                                                <input type="month" value={reportMonth} onChange={(e) => setReportMonth(e.target.value)} className="p-2 border rounded-lg text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-teal-200" />
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => handleDownloadReport('monthly')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50"><FileSpreadsheet size={16}/> Monthly Report</button>
+                                                <button onClick={() => handleDownloadReport('all')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-slate-900"><Download size={16}/> Overall Report</button>
+                                            </div>
                                         </div>
-                                        {stats.recent.length === 0 ? <div className="p-10 text-center text-slate-400 italic">No payments recorded yet.</div> :
+                                        
+                                        {/* Monthly Stats Summary Row */}
+                                        <div className="grid grid-cols-3 border-b border-slate-100 text-center bg-white">
+                                            <div className="p-4 border-r border-slate-50">
+                                                <p className="text-xs font-bold text-slate-400 uppercase">Income ({reportMonth})</p>
+                                                <p className="text-xl font-black text-green-600">+ ₹{monthlyStats.income.toLocaleString()}</p>
+                                            </div>
+                                            <div className="p-4 border-r border-slate-50">
+                                                <p className="text-xs font-bold text-slate-400 uppercase">Expense ({reportMonth})</p>
+                                                <p className="text-xl font-black text-red-600">- ₹{monthlyStats.expense.toLocaleString()}</p>
+                                            </div>
+                                            <div className="p-4">
+                                                <p className="text-xs font-bold text-slate-400 uppercase">Net ({reportMonth})</p>
+                                                <p className={`text-xl font-black ${monthlyStats.net >= 0 ? 'text-teal-600' : 'text-red-600'}`}>₹{monthlyStats.net.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-4 flex justify-between items-center bg-slate-50/50">
+                                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ledger for {reportMonth}</h4>
+                                            <button onClick={() => setShowExpenseModal(true)} className="text-xs flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-bold hover:bg-red-200 transition"><MinusCircle size={14}/> Add Expense</button>
+                                        </div>
+
+                                        {monthlyStats.transactions.length === 0 ? <div className="p-10 text-center text-slate-400 italic">No records found for this month.</div> :
                                         <table className="w-full text-sm text-left">
                                             <thead className="bg-slate-50 text-slate-400 uppercase text-xs font-bold">
-                                                <tr><th className="p-4">Student</th><th className="p-4">Family</th><th className="p-4">Date</th><th className="p-4 text-right">Amount</th></tr>
+                                                <tr><th className="p-4">Date</th><th className="p-4">Description</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4 text-center"></th></tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-50">
-                                                {stats.recent.map((r, i) => (
+                                                {monthlyStats.transactions.map((t, i) => (
                                                     <tr key={i} className="hover:bg-slate-50">
-                                                        <td className="p-4 font-bold text-slate-700">{r.studentName}</td>
-                                                        <td className="p-4 text-slate-500">{r.familyName} <span className="text-xs bg-slate-100 px-2 py-0.5 rounded ml-1">#{r.cardNo}</span></td>
-                                                        <td className="p-4 text-slate-400 font-mono text-xs">{r.date}</td>
-                                                        <td className="p-4 text-right font-bold text-teal-600">₹{r.amount}</td>
+                                                        <td className="p-4 text-slate-500 font-mono text-xs">{t.date}</td>
+                                                        <td className="p-4 font-bold text-slate-700">{t.desc}</td>
+                                                        <td className="p-4"><span className={`px-2 py-1 rounded text-xs font-bold ${t.isExpense ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{t.type}</span></td>
+                                                        <td className={`p-4 text-right font-bold ${t.isExpense ? 'text-red-600' : 'text-green-600'}`}>₹{t.amount}</td>
+                                                        <td className="p-4 text-center">
+                                                            {t.isExpense && <button onClick={() => handleDeleteExpense(t.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14}/></button>}
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -438,13 +647,16 @@
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {filteredFamilies.map(f => (
-                                            <div key={f.id} onClick={() => { setSelectedFamily(f); setActiveStudentId(f.students?.[0]?.id); setView('details'); }} 
+                                            <div key={f.id} onClick={() => { setSelectedFamily(f); setView('details'); }} 
                                                 className="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg hover:border-teal-200 transition cursor-pointer relative overflow-hidden">
                                                 <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-[100px] -mr-4 -mt-4 transition group-hover:bg-teal-100"></div>
                                                 <div className="relative z-10">
                                                     <div className="flex justify-between items-start mb-4">
                                                         <span className="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-md shadow-slate-200">#{f.familyRegNo}</span>
-                                                        <span className="text-xs font-bold text-teal-600 bg-white px-2 py-1 rounded-full">{f.students?.length || 0} Kids</span>
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="text-xs font-bold text-teal-600 bg-white px-2 py-1 rounded-full border border-teal-100 mb-1">{f.students?.length || 0} Kids</span>
+                                                            {Number(f.pendingBalance) > 0 && <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full border border-red-100">Due: ₹{f.pendingBalance}</span>}
+                                                        </div>
                                                     </div>
                                                     <h3 className="font-bold text-lg text-slate-800 truncate mb-1">{f.guardianName}</h3>
                                                     <p className="text-xs text-slate-400 font-mono mb-4">{f.phone || 'No Phone'}</p>
@@ -483,19 +695,27 @@
                                                     <input required name="guardianName" placeholder="Guardian Name" className="col-span-2 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 font-bold text-slate-700" />
                                                     <input required name="familyRegNo" placeholder="Card Number" className="p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200" />
                                                     <input name="phone" placeholder="Phone Number" className="p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200" />
+                                                    <div className="col-span-2 mt-2">
+                                                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Previous Pending Balance (Optional)</label>
+                                                        <input name="pendingBalance" type="number" placeholder="Amount (₹)" className="w-full p-3 border border-red-200 bg-red-50 rounded-xl outline-none focus:ring-2 focus:ring-red-200 font-bold text-red-600" />
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             <div className="p-5 bg-teal-50/50 rounded-2xl border border-teal-100">
                                                 <div className="flex justify-between items-center mb-4">
                                                     <h3 className="text-xs font-bold text-teal-600 uppercase flex items-center gap-2"><UserPlus size={14}/> Students</h3>
-                                                    <button type="button" onClick={() => setCreateStudentsList([...createStudentsList, { studentName: '', regNo: '', year: '' }])} className="text-xs text-teal-700 font-bold bg-white px-2 py-1 rounded shadow-sm hover:bg-teal-100 transition">+ Add Row</button>
+                                                    <button type="button" onClick={() => setCreateStudentsList([...createStudentsList, { studentName: '', regNo: '', year: '', studentClass: '' }])} className="text-xs text-teal-700 font-bold bg-white px-2 py-1 rounded shadow-sm hover:bg-teal-100 transition">+ Add Row</button>
                                                 </div>
                                                 
                                                 <div className="space-y-3">
                                                     {createStudentsList.map((s, i) => (
                                                         <div key={i} className="flex gap-2">
                                                             <input placeholder="Name" className="flex-1 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.studentName} onChange={e => {const l=[...createStudentsList]; l[i].studentName=e.target.value; setCreateStudentsList(l)}} />
+                                                            <select className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.studentClass} onChange={e => {const l=[...createStudentsList]; l[i].studentClass=e.target.value; setCreateStudentsList(l)}}>
+                                                                <option value="">Class</option>
+                                                                {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                                            </select>
                                                             <input placeholder="Reg" className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.regNo} onChange={e => {const l=[...createStudentsList]; l[i].regNo=e.target.value; setCreateStudentsList(l)}} />
                                                             <input placeholder="Year" className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.year} onChange={e => {const l=[...createStudentsList]; l[i].year=e.target.value; setCreateStudentsList(l)}} />
                                                             {createStudentsList.length > 1 && <button type="button" onClick={() => {const l=[...createStudentsList]; l.splice(i,1); setCreateStudentsList(l)}} className="text-red-400 hover:text-red-600"><MinusCircle size={20}/></button>}
@@ -510,7 +730,6 @@
                                 </div>
                             )}
 
-                            {/* DETAILS VIEW */}
                             {view === 'details' && selectedFamily && (
                                 <div className="animate-in slide-in-from-right-8 h-full flex flex-col">
                                     <div className="flex items-center justify-between mb-6">
@@ -531,9 +750,22 @@
                                                 {!editFamilyMode ? (
                                                     <>
                                                         <h2 className="text-2xl font-bold text-slate-800 relative z-10">{selectedFamily.guardianName}</h2>
-                                                        <div className="flex items-center gap-3 mt-2 mb-4 relative z-10">
-                                                            <span className="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-bold font-mono">#{selectedFamily.familyRegNo}</span>
-                                                            <span className="text-sm text-slate-500"><i className="fas fa-phone text-xs mr-1"></i> {selectedFamily.phone}</span>
+                                                        <div className="flex flex-col gap-2 mt-2 mb-4 relative z-10">
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-bold font-mono">#{selectedFamily.familyRegNo}</span>
+                                                                <span className="text-sm text-slate-500"><i className="fas fa-phone text-xs mr-1"></i> {selectedFamily.phone}</span>
+                                                            </div>
+                                                            {Number(selectedFamily.pendingBalance) > 0 ? (
+                                                                <div className="flex items-center gap-2 bg-red-50 p-2 rounded-lg border border-red-100 w-fit">
+                                                                    <History size={14} className="text-red-500"/>
+                                                                    <span className="text-xs font-bold text-red-600">Prev. Pending: ₹{selectedFamily.pendingBalance}</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2 bg-green-50 p-2 rounded-lg border border-green-100 w-fit opacity-70">
+                                                                    <History size={14} className="text-green-500"/>
+                                                                    <span className="text-xs font-bold text-green-600">No Previous Dues</span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </>
                                                 ) : (
@@ -543,20 +775,52 @@
                                                             <input name="cNo" defaultValue={selectedFamily.familyRegNo} className="w-1/2 p-2 border rounded text-sm" />
                                                             <input name="phone" defaultValue={selectedFamily.phone} className="w-1/2 p-2 border rounded text-sm" />
                                                         </div>
-                                                        <button className="w-full bg-blue-600 text-white py-1 rounded text-xs font-bold">Save Changes</button>
+                                                        <div className="pt-2">
+                                                            <label className="text-[10px] uppercase font-bold text-slate-400">Previous Pending</label>
+                                                            <input name="pBal" type="number" defaultValue={selectedFamily.pendingBalance} className="w-full p-2 border border-red-200 rounded text-sm font-bold text-red-600 bg-red-50" placeholder="0" />
+                                                        </div>
+                                                        <button className="w-full bg-blue-600 text-white py-1 rounded text-xs font-bold mt-2">Save Changes</button>
                                                     </form>
                                                 )}
                                                 
-                                                {/* Student List */}
+                                                {/* Student List with Edit Option */}
                                                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
                                                     <p className="text-xs font-bold text-slate-400 uppercase mb-2">Children</p>
-                                                    {selectedFamily.students?.map(s => (
-                                                        <div key={s.id} onClick={() => { setActiveStudentId(s.id); setEditStudentMode(false); }} 
-                                                            className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition border ${activeStudentId === s.id ? 'bg-teal-50 border-teal-200 shadow-sm' : 'bg-white border-transparent hover:bg-slate-50'}`}>
-                                                            <div><h4 className={`font-bold text-sm ${activeStudentId === s.id ? 'text-teal-800' : 'text-slate-700'}`}>{s.studentName}</h4><p className="text-xs text-slate-400">{s.regNo || 'No Reg'}</p></div>
-                                                            <ChevronRight size={16} className={activeStudentId === s.id ? 'text-teal-500' : 'text-slate-300'} />
-                                                        </div>
-                                                    ))}
+                                                    {selectedFamily.students?.map(s => {
+                                                        const isEditing = editingStudentId === s.id;
+                                                        return (
+                                                            <div key={s.id} className="p-3 rounded-xl bg-slate-50 border border-transparent hover:border-teal-200 transition">
+                                                                {!isEditing ? (
+                                                                    <div className="flex justify-between items-center">
+                                                                        <div>
+                                                                            <h4 className="font-bold text-sm text-slate-700">{s.studentName}</h4>
+                                                                            <p className="text-xs text-slate-400">Class: {s.studentClass || '-'} • {s.regNo || 'No Reg'}</p>
+                                                                        </div>
+                                                                        <div className="flex gap-2">
+                                                                            <button onClick={() => setEditingStudentId(s.id)} className="text-blue-400 hover:text-blue-600"><Edit2 size={14}/></button>
+                                                                            <button onClick={() => handleDeleteStudent(s.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14}/></button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <form onSubmit={handleEditStudent} className="flex flex-col gap-2">
+                                                                        <input name="sName" defaultValue={s.studentName} className="p-1 text-sm border rounded" />
+                                                                        <div className="flex gap-1">
+                                                                            <select name="sClass" defaultValue={s.studentClass} className="w-1/3 p-1 text-xs border rounded bg-white">
+                                                                                <option value="">Class</option>
+                                                                                {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                                                            </select>
+                                                                            <input name="sReg" defaultValue={s.regNo} className="w-1/3 p-1 text-xs border rounded" />
+                                                                            <input name="sYear" defaultValue={s.year} className="w-1/3 p-1 text-xs border rounded" />
+                                                                        </div>
+                                                                        <div className="flex gap-2">
+                                                                            <button className="bg-teal-600 text-white text-xs px-2 py-1 rounded flex-1">Save</button>
+                                                                            <button type="button" onClick={() => setEditingStudentId(null)} className="bg-gray-300 text-xs px-2 py-1 rounded">Cancel</button>
+                                                                        </div>
+                                                                    </form>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
 
                                                 {/* Add Student Form */}
@@ -564,100 +828,92 @@
                                                     <form onSubmit={handleAddStudent} className="flex flex-col gap-2">
                                                         <input name="sName" placeholder="New Child Name" required className="p-2 text-sm border rounded-lg outline-none focus:border-teal-400" />
                                                         <div className="flex gap-2">
-                                                            <input name="sReg" placeholder="Reg No" className="w-1/2 p-2 text-sm border rounded-lg outline-none focus:border-teal-400" />
-                                                            <button className="w-1/2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition">Add Child</button>
+                                                            <select name="sClass" required className="w-1/3 p-2 text-sm border rounded-lg outline-none focus:border-teal-400 bg-white">
+                                                                <option value="">Class</option>
+                                                                {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                                            </select>
+                                                            <input name="sReg" placeholder="Reg No" className="w-1/3 p-2 text-sm border rounded-lg outline-none focus:border-teal-400" />
+                                                            <button className="w-1/3 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition">Add</button>
                                                         </div>
                                                     </form>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* RIGHT COL: ACTIVE STUDENT DETAILS */}
+                                        {/* RIGHT COL: PAYMENT INTERFACE & HISTORY */}
                                         <div className="lg:col-span-8">
-                                            {activeStudentId ? (() => {
-                                                const st = selectedFamily.students.find(s => s.id === activeStudentId);
-                                                if (!st) return null;
-                                                return (
-                                                    <div className="space-y-6 animate-in fade-in">
-                                                        {/* Header with Edit */}
-                                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-teal-100">
-                                                            {!editStudentMode ? (
-                                                                <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center gap-4">
-                                                                        <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 text-xl font-bold uppercase">{st.studentName.charAt(0)}</div>
-                                                                        <div><h2 className="text-xl font-bold text-slate-800">{st.studentName}</h2><p className="text-xs text-slate-500 font-bold uppercase">Reg: {st.regNo || 'N/A'} • Year: {st.year}</p></div>
-                                                                    </div>
-                                                                    <div className="flex gap-2">
-                                                                        <button onClick={() => setEditStudentMode(true)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"><Edit2 size={18}/></button>
-                                                                        <button onClick={() => handleDeleteStudent(st.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition"><Trash2 size={18}/></button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <form onSubmit={handleEditStudent} className="flex gap-2 items-center">
-                                                                    <input name="sName" defaultValue={st.studentName} className="flex-1 p-2 border rounded text-sm" />
-                                                                    <input name="sReg" defaultValue={st.regNo} className="w-20 p-2 border rounded text-sm" />
-                                                                    <input name="sYear" defaultValue={st.year} className="w-20 p-2 border rounded text-sm" />
-                                                                    <button className="bg-teal-600 text-white px-3 py-2 rounded text-sm font-bold">Save</button>
-                                                                    <button type="button" onClick={() => setEditStudentMode(false)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
-                                                                </form>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Payment Form */}
-                                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                                                            <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><CreditCard size={18}/> Record Payment</h3>
-                                                            <form onSubmit={handlePayment} className="grid grid-cols-4 gap-3 items-end">
-                                                                <div className="col-span-2 md:col-span-1">
-                                                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Month</label>
-                                                                    <select name="mon" className="w-full p-2.5 border rounded-lg bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100">
-                                                                        {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m=><option key={m}>{m}</option>)}
-                                                                    </select>
-                                                                </div>
-                                                                <div className="col-span-2 md:col-span-1">
-                                                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Amount</label>
-                                                                    <input name="amt" type="number" required placeholder="₹" className="w-full p-2.5 border rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100" />
-                                                                </div>
-                                                                <div className="col-span-2 md:col-span-1">
-                                                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Rec No</label>
-                                                                    <input name="rec" required placeholder="#" className="w-full p-2.5 border rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100" />
-                                                                </div>
-                                                                <input type="hidden" name="date" value={new Date().toISOString().split('T')[0]} />
-                                                                <button className="col-span-2 md:col-span-1 bg-teal-500 text-white p-2.5 rounded-lg font-bold text-sm hover:bg-teal-600 shadow-md transition">Pay Now</button>
-                                                            </form>
-                                                        </div>
-
-                                                        {/* History Table */}
-                                                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                                            <table className="w-full text-sm text-left">
-                                                                <thead className="bg-slate-50 text-slate-400 font-bold text-xs uppercase">
-                                                                    <tr><th className="p-4">Date</th><th className="p-4">Rec</th><th className="p-4">Month</th><th className="p-4 text-right">Amt</th><th className="p-4 text-center">Act</th></tr>
-                                                                </thead>
-                                                                <tbody className="divide-y divide-slate-50">
-                                                                    {st.payments?.slice().reverse().map((p, i) => (
-                                                                        <tr key={i} className="hover:bg-slate-50 transition group">
-                                                                            <td className="p-4 text-slate-500 font-mono text-xs">{p.date}</td>
-                                                                            <td className="p-4 font-bold text-slate-700">{p.receiptNo}</td>
-                                                                            <td className="p-4"><span className="bg-teal-50 text-teal-700 px-2 py-1 rounded text-xs font-bold">{p.month}</span></td>
-                                                                            <td className="p-4 text-right font-bold text-slate-800">₹{p.amount}</td>
-                                                                            <td className="p-4 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
-                                                                                <button onClick={() => { setCurrentReceipt({...p, studentName:st.studentName, guardianName:selectedFamily.guardianName, familyRegNo:selectedFamily.familyRegNo}); setShowReceipt(true); }} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded"><Printer size={16}/></button>
-                                                                                <button onClick={() => handleDeletePayment(p.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 size={16}/></button>
-                                                                            </td>
-                                                                        </tr>
-                                                                    ))}
-                                                                    {(!st.payments || st.payments.length === 0) && <tr><td colSpan="5" className="p-8 text-center text-slate-400 italic">No payment history found.</td></tr>}
-                                                                </tbody>
-                                                            </table>
+                                            <div className="space-y-6 animate-in fade-in">
+                                                
+                                                {/* Family Financial Header */}
+                                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-teal-100 flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 text-xl font-bold uppercase"><Wallet /></div>
+                                                        <div>
+                                                            <h2 className="text-xl font-bold text-slate-800">Family Account</h2>
+                                                            <p className="text-xs text-slate-500 font-bold uppercase">Total Payments: {(selectedFamily.payments?.length) || 0}</p>
                                                         </div>
                                                     </div>
-                                                );
-                                            })() : (
-                                                <div className="h-full flex flex-col items-center justify-center text-slate-300 bg-white rounded-2xl border-2 border-dashed border-slate-200 p-12">
-                                                    <User size={64} className="mb-4 opacity-20" />
-                                                    <p className="font-bold text-lg">Select a student</p>
-                                                    <p className="text-sm">Click on a child from the left panel to view details.</p>
                                                 </div>
-                                            )}
+
+                                                {/* Payment Form */}
+                                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                                                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><CreditCard size={18}/> Record Payment</h3>
+                                                    <form onSubmit={handlePayment} className="grid grid-cols-4 gap-3 items-end">
+                                                        <div className="col-span-2">
+                                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Payment For (Optional)</label>
+                                                            <select name="forStudent" className="w-full p-2.5 border rounded-lg bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100">
+                                                                <option value="">Family / General</option>
+                                                                {selectedFamily.students?.map(s => <option key={s.id} value={s.studentName}>{s.studentName} (Class {s.studentClass})</option>)}
+                                                            </select>
+                                                        </div>
+                                                        <div className="col-span-2">
+                                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Month</label>
+                                                            <select name="mon" className="w-full p-2.5 border rounded-lg bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100">
+                                                                {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m=><option key={m}>{m}</option>)}
+                                                            </select>
+                                                        </div>
+                                                        <div className="col-span-2 md:col-span-1">
+                                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Amount</label>
+                                                            <input name="amt" type="number" required placeholder="₹" className="w-full p-2.5 border rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100" />
+                                                        </div>
+                                                        <div className="col-span-2 md:col-span-1">
+                                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Rec No</label>
+                                                            <input name="rec" required placeholder="#" className="w-full p-2.5 border rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100" />
+                                                        </div>
+                                                        <input type="hidden" name="date" value={new Date().toISOString().split('T')[0]} />
+                                                        <button className="col-span-4 md:col-span-2 bg-teal-500 text-white p-2.5 rounded-lg font-bold text-sm hover:bg-teal-600 shadow-md transition flex justify-center items-center gap-2"><CreditCard size={16}/> Pay Now</button>
+                                                    </form>
+                                                </div>
+
+                                                {/* History Table */}
+                                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                                    <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                                                        <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider">Payment History</h4>
+                                                    </div>
+                                                    <table className="w-full text-sm text-left">
+                                                        <thead className="bg-white text-slate-400 font-bold text-xs uppercase">
+                                                            <tr><th className="p-4">Date</th><th className="p-4">Rec #</th><th className="p-4">For</th><th className="p-4 text-right">Amt</th><th className="p-4 text-center">Act</th></tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-50">
+                                                            {selectedFamily.payments?.slice().reverse().map((p, i) => (
+                                                                <tr key={i} className="hover:bg-slate-50 transition group">
+                                                                    <td className="p-4 text-slate-500 font-mono text-xs">{p.date}</td>
+                                                                    <td className="p-4 font-bold text-slate-700">{p.receiptNo}</td>
+                                                                    <td className="p-4"><span className="bg-teal-50 text-teal-700 px-2 py-1 rounded text-xs font-bold">{p.month}</span></td>
+                                                                    <td className="p-4 text-xs text-slate-500">{p.forStudent || 'General'}</td>
+                                                                    <td className="p-4 text-right font-bold text-slate-800">₹{p.amount}</td>
+                                                                    <td className="p-4 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
+                                                                        <button onClick={() => { setCurrentReceipt({...p, studentName:(p.forStudent || 'Family Account'), guardianName:selectedFamily.guardianName, familyRegNo:selectedFamily.familyRegNo}); setShowReceipt(true); }} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded"><Printer size={16}/></button>
+                                                                        <button onClick={() => handleDeletePayment(p.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 size={16}/></button>
+                                                                        <button onClick={() => handleWhatsAppShare(p, selectedFamily.phone)} className="text-green-500 hover:bg-green-50 p-1.5 rounded"><MessageCircle size={16}/></button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                            {(!selectedFamily.payments || selectedFamily.payments.length === 0) && <tr><td colSpan="6" className="p-8 text-center text-slate-400 italic">No payment history found for this family.</td></tr>}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -689,7 +945,7 @@
                                     <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-6 space-y-2">
                                         <div className="flex justify-between"><span className="text-slate-400 text-xs uppercase font-bold">Family ID</span><span className="font-bold">{currentReceipt.familyRegNo}</span></div>
                                         <div className="flex justify-between"><span className="text-slate-400 text-xs uppercase font-bold">Guardian</span><span className="font-bold truncate max-w-[150px]">{currentReceipt.guardianName}</span></div>
-                                        <div className="flex justify-between border-t border-slate-200 pt-2 mt-2"><span className="text-slate-400 text-xs uppercase font-bold">Student</span><span className="font-bold uppercase text-teal-600">{currentReceipt.studentName}</span></div>
+                                        <div className="flex justify-between border-t border-slate-200 pt-2 mt-2"><span className="text-slate-400 text-xs uppercase font-bold">Payment For</span><span className="font-bold uppercase text-teal-600">{currentReceipt.studentName}</span></div>
                                     </div>
                                     <div className="flex justify-between items-end border-t-2 border-slate-800 pt-4">
                                         <span className="text-xs font-bold uppercase text-slate-400">Total Amount</span>
@@ -701,15 +957,29 @@
                                     <div className="absolute -left-3 top-1/2 w-6 h-6 bg-slate-900 rounded-full"></div>
                                     <div className="absolute -right-3 top-1/2 w-6 h-6 bg-slate-900 rounded-full"></div>
                                 </div>
-                                <div className="p-4 bg-slate-50 flex gap-3">
-                                    <button onClick={() => setShowReceipt(false)} className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-200 rounded-xl transition">Close</button>
-                                    <button onClick={() => {
-                                        const c = document.getElementById('receipt-print').innerHTML;
-                                        const w = window.open('','','height=600,width=400');
-                                        w.document.write(`<html><head><title>Receipt</title><script src="https://cdn.tailwindcss.com"><\/script></head><body class="p-8">${c}</body></html>`);
-                                        w.print(); w.close();
-                                    }} className="flex-1 py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 shadow-lg flex items-center justify-center gap-2"><Printer size={18}/> Print</button>
+                                <div className="p-4 bg-slate-50 flex gap-2">
+                                    <button onClick={() => handleWhatsAppShare(currentReceipt, selectedFamily.phone)} className="flex-1 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 shadow-lg flex items-center justify-center gap-2"><MessageCircle size={18}/> WhatsApp</button>
+                                    <button onClick={handleDownloadImage} className="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 shadow-lg flex items-center justify-center gap-2"><ImageDown size={18}/> Save</button>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* EXPENSE MODAL */}
+                    {showExpenseModal && (
+                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+                                <h3 className="font-bold text-lg mb-4">Add Expense</h3>
+                                <form onSubmit={handleAddExpense} className="space-y-3">
+                                    <input name="desc" placeholder="Description (e.g. Electricity Bill)" required className="w-full p-2 border rounded" />
+                                    <input name="amount" type="number" placeholder="Amount (₹)" required className="w-full p-2 border rounded" />
+                                    <select name="cat" className="w-full p-2 border rounded bg-white"><option>Utilities</option><option>Maintenance</option><option>Salary</option><option>Other</option></select>
+                                    <input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full p-2 border rounded" />
+                                    <div className="flex gap-2 pt-2">
+                                        <button className="flex-1 bg-red-600 text-white py-2 rounded font-bold">Add</button>
+                                        <button type="button" onClick={()=>setShowExpenseModal(false)} className="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}
