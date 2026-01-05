@@ -8,7 +8,7 @@
     <!-- Design System -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     
     <!-- HTML2Canvas for Image Download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -32,6 +32,7 @@
         :root { --primary: #2dd4bf; --secondary: #f472b6; --dark: #334155; --bg: #f0f9ff; }
         body { font-family: 'Quicksand', sans-serif; background-color: var(--bg); color: var(--dark); }
         h1, h2, h3, h4, .brand-font { font-family: 'Fredoka', sans-serif; }
+        .serif-font { font-family: 'Playfair Display', serif; }
         
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); }
         .nav-active { background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%); color: white; box-shadow: 0 10px 20px -5px rgba(45, 212, 191, 0.4); }
@@ -150,8 +151,21 @@
 
             const fileInputRef = useRef(null);
 
-            // --- AUTH & SYNC ---
+            // --- CUSTOM MADRSA NAME STATE ---
+            const [madrsaName, setMadrsaName] = useState('HIHSM');
+
             useEffect(() => {
+                // Fetch Madrsa Name from Admin LocalStorage
+                const localData = localStorage.getItem('hihsm_data_ultimate');
+                if (localData) {
+                    try {
+                        const parsed = JSON.parse(localData);
+                        if (parsed.settings && parsed.settings.name) {
+                            setMadrsaName(parsed.settings.name);
+                        }
+                    } catch (e) { console.error("Error parsing admin settings", e); }
+                }
+
                 if (!auth) return;
                 const unsubAuth = onAuthStateChanged(auth, u => {
                     setUser(u);
@@ -219,7 +233,7 @@
                                 type: 'income',
                                 familyName: f.guardianName, 
                                 cardNo: f.familyRegNo,
-                                studentName: p.forStudent || 'Family Payment',
+                                studentName: 'Family Account', 
                                 phone: f.phone 
                             });
                         });
@@ -507,7 +521,7 @@
                 
                 setCurrentReceipt({ 
                     ...pay, 
-                    studentNames: allStudents, // Store names here
+                    studentNames: allStudents, 
                     guardianName: selectedFamily.guardianName, 
                     familyRegNo: selectedFamily.familyRegNo,
                     pendingBalance: selectedFamily.pendingBalance 
@@ -531,8 +545,8 @@
                 const element = document.getElementById('receipt-print');
                 if(!element) return;
                 
-                // 1. Prepare formatted message with ALL students
-                const message = `*HIHSM Varisanghya Receipt*\n` +
+                // 1. Prepare formatted message with ALL students and Madrsa Name
+                const message = `*${madrsaName} Receipt*\n` +
                     `----------------------------\n` +
                     `Receipt No: ${receipt.receiptNo}\n` +
                     `Date: ${receipt.date}\n` +
@@ -608,7 +622,7 @@
                     <aside className="w-full md:w-64 bg-white border-r border-slate-200 flex-shrink-0 z-20 flex flex-col no-print md:h-screen md:sticky md:top-0">
                         <div className="p-6 border-b border-slate-100 flex items-center gap-3">
                             <div className="w-10 h-10 bg-teal-400 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-teal-100">VS</div>
-                            <div><h1 className="font-bold text-lg leading-none">Varisanghya</h1><p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Manager</p></div>
+                            <div><h1 className="font-bold text-lg leading-none">Varisanghya</h1><p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{madrsaName}</p></div>
                         </div>
                         <nav className="p-4 space-y-2 flex-1">
                             <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='dashboard' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><LayoutGrid size={18} /> Dashboard</button>
@@ -976,7 +990,7 @@
                                                                     <td className="p-4"><span className="bg-teal-50 text-teal-700 px-2 py-1 rounded text-xs font-bold">{p.month}</span></td>
                                                                     <td className="p-4 text-right font-bold text-slate-800">₹{p.amount}</td>
                                                                     <td className="p-4 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
-                                                                        <button onClick={() => { setCurrentReceipt({...p, studentNames:(selectedFamily.students?.map(s => s.studentName).join(', ') || 'N/A'), guardianName:selectedFamily.guardianName, familyRegNo:selectedFamily.familyRegNo, pendingBalance: selectedFamily.pendingBalance, month: p.month}); setShowReceipt(true); }} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded"><Printer size={16}/></button>
+                                                                        <button onClick={() => { setCurrentReceipt({...p, studentNames:(selectedFamily.students?.map(s=>s.studentName).join(', ')||'N/A'), guardianName:selectedFamily.guardianName, familyRegNo:selectedFamily.familyRegNo, pendingBalance:selectedFamily.pendingBalance, month:p.month});setShowReceipt(true);}} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded"><Printer size={16}/></button>
                                                                         <button onClick={() => handleDeletePayment(p.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 size={16}/></button>
                                                                         <button onClick={() => handleWhatsAppShare(p, selectedFamily.phone)} className="text-green-500 hover:bg-green-50 p-1.5 rounded"><MessageCircle size={16}/></button>
                                                                     </td>
@@ -996,53 +1010,100 @@
 
                     {/* RECEIPT MODAL */}
                     {showReceipt && (
-                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print animate-in fade-in">
-                            <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden transform scale-100 transition">
-                                <div className="bg-slate-800 p-4 flex justify-between items-center text-white">
-                                    <h3 className="font-bold">Receipt Preview</h3>
-                                    <button onClick={() => setShowReceipt(false)}><X size={20}/></button>
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print animate-in fade-in">
+                            <div className="bg-white w-full max-w-xl rounded-sm shadow-2xl overflow-hidden transform scale-100 transition">
+                                
+                                <div className="bg-slate-800 p-4 flex justify-between items-center text-white border-b border-slate-700">
+                                    <h3 className="font-bold tracking-wide flex items-center gap-2"><i className="fas fa-print"></i> Print Receipt</h3>
+                                    <button onClick={() => setShowReceipt(false)} className="hover:bg-slate-700 p-1 rounded transition"><X size={20}/></button>
                                 </div>
-                                <div id="receipt-print" className="p-8 bg-white text-slate-800 font-mono text-sm relative">
-                                    <div className="text-center border-b-2 border-slate-800 pb-4 mb-6">
-                                        <h2 className="text-2xl font-black tracking-tighter uppercase">Varisanghya</h2>
-                                        <p className="text-xs uppercase tracking-widest text-slate-500 font-bold mt-1">Payment Receipt</p>
-                                    </div>
-                                    <div className="flex justify-between mb-2">
-                                        <span className="text-slate-500">Date:</span>
-                                        <span className="font-bold">{currentReceipt.date}</span>
-                                    </div>
-                                    <div className="flex justify-between mb-6">
-                                        <span className="text-slate-500">Receipt No:</span>
-                                        <span className="font-bold">#{currentReceipt.receiptNo}</span>
-                                    </div>
-                                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-6 space-y-2">
-                                        <div className="flex justify-between"><span className="text-slate-400 text-xs uppercase font-bold">Family ID</span><span className="font-bold">{currentReceipt.familyRegNo}</span></div>
-                                        <div className="flex justify-between"><span className="text-slate-400 text-xs uppercase font-bold">Guardian</span><span className="font-bold truncate max-w-[150px]">{currentReceipt.guardianName}</span></div>
-                                        <div className="border-t border-slate-200 pt-2 mt-2">
-                                            <span className="text-slate-400 text-xs uppercase font-bold block mb-1">Students</span>
-                                            <span className="font-bold uppercase text-teal-600 text-xs leading-tight block">{currentReceipt.studentNames}</span>
-                                        </div>
-                                        <div className="flex justify-between mt-2"><span className="text-slate-400 text-xs uppercase font-bold">Month</span><span className="font-bold">{currentReceipt.month}</span></div>
-                                        {Number(currentReceipt.pendingBalance) > 0 && (
-                                            <div className="flex justify-between border-t border-red-100 bg-red-50 p-2 rounded mt-2">
-                                                <span className="text-red-500 text-xs uppercase font-bold">Pending Dues</span>
-                                                <span className="font-bold text-red-600">₹{currentReceipt.pendingBalance}</span>
+
+                                <div id="receipt-print" className="bg-white p-8 text-slate-800 relative">
+                                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-600 via-slate-800 to-teal-600"></div>
+
+                                    <div className="flex justify-between items-start border-b-2 border-slate-100 pb-6 mb-6">
+                                        <div className="flex gap-4">
+                                            <div className="w-14 h-14 bg-slate-900 text-white flex items-center justify-center text-2xl font-serif font-bold rounded shadow-md">
+                                                {madrsaName.charAt(0)}
                                             </div>
-                                        )}
+                                            <div>
+                                                <h1 className="text-2xl font-serif font-bold text-slate-900 uppercase tracking-wide leading-none">{madrsaName}</h1>
+                                                <p className="text-xs text-slate-500 font-medium mt-1 uppercase tracking-wider">Educational Institution</p>
+                                                <p className="text-[10px] text-slate-400 mt-0.5">Kerala, India</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-bold text-teal-600 uppercase tracking-widest border border-teal-600 px-2 py-0.5 rounded inline-block mb-1">Receipt</div>
+                                            <p className="text-2xl font-mono font-bold text-slate-800">#{currentReceipt.receiptNo}</p>
+                                            <p className="text-xs text-slate-400">Date: {currentReceipt.date}</p>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between items-end border-t-2 border-slate-800 pt-4">
-                                        <span className="text-xs font-bold uppercase text-slate-400">Total Amount</span>
-                                        <span className="text-3xl font-black text-slate-800">₹{currentReceipt.amount}</span>
+
+                                    <div className="grid grid-cols-2 gap-8 mb-8">
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Received From</p>
+                                            <h3 className="text-lg font-bold text-slate-800">{currentReceipt.guardianName}</h3>
+                                            <p className="text-xs text-slate-500">Family ID: <span className="font-mono font-bold">{currentReceipt.familyRegNo}</span></p>
+                                        </div>
+                                        <div className="text-right">
+                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payment Month</p>
+                                             <h3 className="text-lg font-bold text-teal-700 capitalize">{currentReceipt.month}</h3>
+                                             <p className="text-xs text-slate-500">Academic Year: {new Date().getFullYear()}</p>
+                                        </div>
                                     </div>
-                                    <div className="mt-8 text-center text-[10px] text-slate-300 uppercase font-bold tracking-widest">Thank you!</div>
-                                    
-                                    {/* Decoration Circles */}
-                                    <div className="absolute -left-3 top-1/2 w-6 h-6 bg-slate-900 rounded-full"></div>
-                                    <div className="absolute -right-3 top-1/2 w-6 h-6 bg-slate-900 rounded-full"></div>
+
+                                    <div className="border border-slate-200 rounded-lg overflow-hidden mb-8">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left border-b border-slate-200">Description</th>
+                                                    <th className="px-4 py-3 text-right border-b border-slate-200">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                <tr>
+                                                    <td className="px-4 py-3">
+                                                        <p className="font-bold text-slate-700">Varisanghya / Subscription</p>
+                                                        <p className="text-xs text-slate-500 mt-0.5">Students: <span className="italic">{currentReceipt.studentNames}</span></p>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">₹{currentReceipt.amount}</td>
+                                                </tr>
+                                                {Number(currentReceipt.pendingBalance) > 0 && (
+                                                    <tr>
+                                                        <td className="px-4 py-2 text-xs text-red-500 italic">Previous Pending Balance (Due)</td>
+                                                        <td className="px-4 py-2 text-right text-xs font-mono text-red-500">₹{currentReceipt.pendingBalance}</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                            <tfoot className="bg-slate-900 text-white">
+                                                <tr>
+                                                    <td className="px-4 py-3 text-right font-bold uppercase text-xs">Total Received</td>
+                                                    <td className="px-4 py-3 text-right font-bold text-lg">₹{currentReceipt.amount}</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+
+                                    <div className="flex justify-between items-end mt-12 pt-4 border-t border-slate-100">
+                                        <div className="text-[10px] text-slate-400">
+                                            <p>Thank you for your support.</p>
+                                            <p>This is a computer-generated receipt.</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-serif text-xl text-slate-800 mb-1 font-bold" style={{fontFamily: 'cursive'}}>Authorized</div>
+                                            <div className="h-px w-32 bg-slate-300"></div>
+                                            <p className="text-[9px] uppercase font-bold text-slate-400 mt-1 tracking-widest">Signatory</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
+                                        <i className="fas fa-university text-9xl text-slate-900"></i>
+                                    </div>
                                 </div>
-                                <div className="p-4 bg-slate-50 flex gap-2">
-                                    <button onClick={() => handleWhatsAppShare(currentReceipt, selectedFamily.phone)} className="flex-1 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 shadow-lg flex items-center justify-center gap-2"><MessageCircle size={18}/> WhatsApp</button>
-                                    <button onClick={handleDownloadImage} className="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 shadow-lg flex items-center justify-center gap-2"><ImageDown size={18}/> Save</button>
+
+                                <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-3">
+                                    <button onClick={() => handleWhatsAppShare(currentReceipt, selectedFamily.phone)} className="flex-1 py-2.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 shadow-md flex items-center justify-center gap-2 transition"><i className="fab fa-whatsapp text-lg"></i> Share</button>
+                                    <button onClick={handleDownloadImage} className="flex-1 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50 shadow-sm flex items-center justify-center gap-2 transition"><i className="fas fa-download"></i> Save Image</button>
                                 </div>
                             </div>
                         </div>
