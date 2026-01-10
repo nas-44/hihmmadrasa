@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Varisanghya - HIHSM</title>
-    
+
     <!-- Design System -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+
     <!-- HTML2Canvas for Image Download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -29,39 +32,93 @@
     </script>
 
     <style>
-        :root { --primary: #2dd4bf; --secondary: #f472b6; --dark: #334155; --bg: #f0f9ff; }
-        body { font-family: 'Quicksand', sans-serif; background-color: var(--bg); color: var(--dark); }
-        h1, h2, h3, h4, .brand-font { font-family: 'Fredoka', sans-serif; }
-        .serif-font { font-family: 'Playfair Display', serif; }
-        
-        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); }
-        .nav-active { background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%); color: white; box-shadow: 0 10px 20px -5px rgba(45, 212, 191, 0.4); }
-        
+        :root {
+            --primary: #2dd4bf;
+            --secondary: #f472b6;
+            --dark: #334155;
+            --bg: #f0f9ff;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: var(--bg);
+            color: var(--dark);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        .brand-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .serif-font {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .nav-active {
+            background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(45, 212, 191, 0.4);
+        }
+
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
 
         @media print {
-            .no-print { display: none !important; }
-            body { 
-                background: white; 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact; 
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
         }
 
         /* Error Overlay */
         #debug-error {
             display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.95); color: #dc2626; z-index: 9999;
-            padding: 2rem; overflow: auto; font-family: monospace;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            color: #dc2626;
+            z-index: 9999;
+            padding: 2rem;
+            overflow: auto;
+            font-family: monospace;
             text-align: center;
         }
     </style>
 </head>
+
 <body>
     <!-- Fallback / Loading State -->
     <div id="root" class="min-h-screen flex flex-col items-center justify-center">
@@ -75,14 +132,17 @@
         <div class="max-w-xl mx-auto mt-20">
             <h2 class="text-3xl font-bold mb-4">Something went wrong</h2>
             <p class="mb-4 text-slate-600">Please check the console for details or report this error.</p>
-            <div id="error-text" class="bg-red-50 p-4 rounded border border-red-200 text-left mb-6 whitespace-pre-wrap"></div>
-            <button onclick="window.location.reload()" class="px-6 py-3 bg-teal-600 text-white rounded-full font-bold hover:bg-teal-700 transition">Reload Page</button>
+            <div id="error-text" class="bg-red-50 p-4 rounded border border-red-200 text-left mb-6 whitespace-pre-wrap">
+            </div>
+            <button onclick="window.location.reload()"
+                class="px-6 py-3 bg-teal-600 text-white rounded-full font-bold hover:bg-teal-700 transition">Reload
+                Page</button>
         </div>
     </div>
 
     <script>
         // Catch Global Errors to prevent blank screen
-        window.onerror = function(message, source, lineno, colno, error) {
+        window.onerror = function (message, source, lineno, colno, error) {
             document.getElementById('root').style.display = 'none';
             document.getElementById('debug-error').style.display = 'block';
             document.getElementById('error-text').textContent = `Error: ${message}\nLine: ${lineno}`;
@@ -114,13 +174,13 @@
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-        } catch (error) { 
+        } catch (error) {
             console.error("Firebase Init Error:", error);
             throw new Error("Firebase Initialization Failed: " + error.message);
         }
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
-        const CLASS_OPTIONS = Array.from({length: 12}, (_, i) => i + 1);
+        const CLASS_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 
         // --- MAIN APP COMPONENT ---
         function VarisanghyaApp() {
@@ -131,20 +191,20 @@
             const [importLoading, setImportLoading] = useState(false);
             const [view, setView] = useState('dashboard');
             const [selectedFamily, setSelectedFamily] = useState(null);
-            
+
             // For Payment Receipt
             const [showReceipt, setShowReceipt] = useState(false);
             const [currentReceipt, setCurrentReceipt] = useState(null);
             const [searchTerm, setSearchTerm] = useState('');
             const [errorMsg, setErrorMsg] = useState(null);
-            
+
             // Edit States
             const [editFamilyMode, setEditFamilyMode] = useState(false);
-            const [editingStudentId, setEditingStudentId] = useState(null); 
+            const [editingStudentId, setEditingStudentId] = useState(null);
             const [createStudentsList, setCreateStudentsList] = useState([
                 { id: 'init', studentName: '', regNo: '', year: new Date().getFullYear(), studentClass: '' }
             ]);
-            
+
             // Dashboard & Expense States
             const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
             const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -184,18 +244,18 @@
                 if (!user || !db) return;
                 try {
                     // Families Sync
-                    const unsubFam = onSnapshot(collection(db, 'families'), 
+                    const unsubFam = onSnapshot(collection(db, 'families'),
                         (snap) => {
                             setFamilies(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                             setLoading(false);
                         },
-                        (err) => { 
-                            console.error(err); 
-                            setErrorMsg("Sync Error: " + err.message); 
-                            setLoading(false); 
+                        (err) => {
+                            console.error(err);
+                            setErrorMsg("Sync Error: " + err.message);
+                            setLoading(false);
                         }
                     );
-                    
+
                     // Expenses Sync
                     const unsubExp = onSnapshot(collection(db, 'expenses'),
                         (snap) => {
@@ -215,7 +275,7 @@
             const stats = useMemo(() => {
                 let fams = families.length;
                 let studs = 0;
-                let rev = 0; 
+                let rev = 0;
                 let pendingTotal = 0;
                 let recent = [];
                 let expTotal = 0;
@@ -224,17 +284,17 @@
                 families.forEach(f => {
                     if (f.students) studs += f.students.length;
                     if (f.pendingBalance) pendingTotal += Number(f.pendingBalance) || 0;
-                    
+
                     if (f.payments) {
                         f.payments.forEach(p => {
                             rev += Number(p.amount) || 0;
                             recent.push({
-                                ...p, 
+                                ...p,
                                 type: 'income',
-                                familyName: f.guardianName, 
+                                familyName: f.guardianName,
                                 cardNo: f.familyRegNo,
-                                studentName: 'Family Account', 
-                                phone: f.phone 
+                                studentName: 'Family Account',
+                                phone: f.phone
                             });
                         });
                     }
@@ -248,29 +308,29 @@
                 // Calculate Net
                 const netBalance = rev - expTotal;
 
-                return { 
-                    fams, 
-                    studs, 
-                    rev, 
+                return {
+                    fams,
+                    studs,
+                    rev,
                     expTotal,
                     netBalance,
-                    pendingTotal, 
-                    recent: recent.sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5) 
+                    pendingTotal,
+                    recent: recent.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5)
                 };
             }, [families, expenses]);
 
             const monthlyStats = useMemo(() => {
-                if(!reportMonth) return { income: 0, expense: 0, net: 0, transactions: [] };
-                
+                if (!reportMonth) return { income: 0, expense: 0, net: 0, transactions: [] };
+
                 let mIncome = 0;
                 let mExpense = 0;
                 let mTrans = [];
 
                 // Filter Income
                 families.forEach(f => {
-                    if(f.payments) {
+                    if (f.payments) {
                         f.payments.forEach(p => {
-                            if(p.date.startsWith(reportMonth)) {
+                            if (p.date.startsWith(reportMonth)) {
                                 mIncome += Number(p.amount) || 0;
                                 mTrans.push({
                                     date: p.date,
@@ -286,7 +346,7 @@
 
                 // Filter Expenses
                 expenses.forEach(e => {
-                    if(e.date.startsWith(reportMonth)) {
+                    if (e.date.startsWith(reportMonth)) {
                         mExpense += Number(e.amount) || 0;
                         mTrans.push({
                             id: e.id,
@@ -300,7 +360,7 @@
                 });
 
                 // Sort by date
-                mTrans.sort((a,b) => new Date(b.date) - new Date(a.date));
+                mTrans.sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 return {
                     income: mIncome,
@@ -313,12 +373,12 @@
 
             const filteredFamilies = useMemo(() => {
                 let data = families;
-                
+
                 // 1. Filter
                 if (searchTerm) {
                     const q = searchTerm.toLowerCase();
-                    data = data.filter(f => 
-                        f.guardianName?.toLowerCase().includes(q) || 
+                    data = data.filter(f =>
+                        f.guardianName?.toLowerCase().includes(q) ||
                         f.familyRegNo?.toString().toLowerCase().includes(q) ||
                         f.students?.some(s => s.studentName.toLowerCase().includes(q))
                     );
@@ -350,11 +410,11 @@
                 let csv = "Date,Type,Description,Amount\n";
                 let dataToExport = [];
 
-                if(type === 'monthly') {
+                if (type === 'monthly') {
                     dataToExport = monthlyStats.transactions;
                 } else {
                     families.forEach(f => {
-                        if(f.payments) f.payments.forEach(p => dataToExport.push({
+                        if (f.payments) f.payments.forEach(p => dataToExport.push({
                             date: p.date, type: 'Income', desc: `Payment: ${f.guardianName}`, amount: p.amount
                         }));
                     });
@@ -363,7 +423,7 @@
                             date: e.date, type: 'Expense', desc: e.description, amount: e.amount
                         });
                     });
-                    dataToExport.sort((a,b) => new Date(b.date) - new Date(a.date));
+                    dataToExport.sort((a, b) => new Date(b.date) - new Date(a.date));
                 }
 
                 dataToExport.forEach(row => {
@@ -395,35 +455,35 @@
                 setImportLoading(true);
                 try {
                     const lines = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-                    if(lines.length < 2) throw new Error("File is empty");
+                    if (lines.length < 2) throw new Error("File is empty");
                     const map = new Map();
                     lines.slice(1).forEach(line => {
-                        if(!line.trim()) return;
+                        if (!line.trim()) return;
                         const cols = line.split(',');
-                        if(cols.length < 2) return; 
+                        if (cols.length < 2) return;
                         const card = cols[0]?.trim(); const guard = cols[1]?.trim(); const phone = cols[2]?.trim(); const pending = cols[3]?.trim(); const sName = cols[4]?.trim(); const sClass = cols[5]?.trim(); const sReg = cols[6]?.trim(); const sYear = cols[7]?.trim();
-                        if(!card || !guard) return;
-                        if(!map.has(card)) map.set(card, { familyRegNo: card, guardianName: guard, phone: phone||'', pendingBalance: pending||0, students: [], payments: [] });
-                        if(sName) map.get(card).students.push({ id: generateId(), studentName: sName, studentClass: sClass||'', regNo: sReg||'', year: sYear||new Date().getFullYear().toString() });
+                        if (!card || !guard) return;
+                        if (!map.has(card)) map.set(card, { familyRegNo: card, guardianName: guard, phone: phone || '', pendingBalance: pending || 0, students: [], payments: [] });
+                        if (sName) map.get(card).students.push({ id: generateId(), studentName: sName, studentClass: sClass || '', regNo: sReg || '', year: sYear || new Date().getFullYear().toString() });
                     });
-                    if(map.size === 0) { alert("No data."); setImportLoading(false); return; }
-                    if(!confirm(`Import ${map.size} families?`)) { setImportLoading(false); return; }
+                    if (map.size === 0) { alert("No data."); setImportLoading(false); return; }
+                    if (!confirm(`Import ${map.size} families?`)) { setImportLoading(false); return; }
                     let added = 0, updated = 0;
                     for (const data of map.values()) {
-                         const q = query(collection(db, 'families'), where('familyRegNo', '==', data.familyRegNo));
-                         const snap = await getDocs(q);
-                         if(!snap.empty) {
-                           const docRef = doc(db, 'families', snap.docs[0].id);
-                           const existing = snap.docs[0].data().students || [];
-                           const newSt = data.students.filter(n => !existing.some(e => e.studentName.toLowerCase() === n.studentName.toLowerCase()));
-                           let updatePayload = {};
-                           if(data.pendingBalance) updatePayload.pendingBalance = data.pendingBalance;
-                           if(newSt.length > 0) updatePayload.students = [...existing, ...newSt];
-                           if(Object.keys(updatePayload).length > 0) { await updateDoc(docRef, updatePayload); updated++; }
-                         } else { await addDoc(collection(db, 'families'), { ...data, createdAt: serverTimestamp() }); added++; }
+                        const q = query(collection(db, 'families'), where('familyRegNo', '==', data.familyRegNo));
+                        const snap = await getDocs(q);
+                        if (!snap.empty) {
+                            const docRef = doc(db, 'families', snap.docs[0].id);
+                            const existing = snap.docs[0].data().students || [];
+                            const newSt = data.students.filter(n => !existing.some(e => e.studentName.toLowerCase() === n.studentName.toLowerCase()));
+                            let updatePayload = {};
+                            if (data.pendingBalance) updatePayload.pendingBalance = data.pendingBalance;
+                            if (newSt.length > 0) updatePayload.students = [...existing, ...newSt];
+                            if (Object.keys(updatePayload).length > 0) { await updateDoc(docRef, updatePayload); updated++; }
+                        } else { await addDoc(collection(db, 'families'), { ...data, createdAt: serverTimestamp() }); added++; }
                     }
                     alert(`Imported: ${added} New, ${updated} Updated`);
-                } catch(err) { console.error(err); alert("Import Failed"); }
+                } catch (err) { console.error(err); alert("Import Failed"); }
                 setImportLoading(false);
             };
 
@@ -440,11 +500,11 @@
                         createdAt: serverTimestamp()
                     });
                     setShowExpenseModal(false);
-                } catch(e) { alert("Error adding expense"); }
+                } catch (e) { alert("Error adding expense"); }
             };
 
             const handleDeleteExpense = async (id) => {
-                if(confirm("Delete this expense record?")) {
+                if (confirm("Delete this expense record?")) {
                     await deleteDoc(doc(db, 'expenses', id));
                 }
             };
@@ -461,7 +521,7 @@
                         guardianName: fd.get('guardianName'), familyRegNo: fd.get('familyRegNo'), phone: fd.get('phone'), pendingBalance: fd.get('pendingBalance') || 0, students, payments: [], createdAt: serverTimestamp()
                     });
                     setView('home'); setCreateStudentsList([{ id: 'init', studentName: '', regNo: '', year: new Date().getFullYear(), studentClass: '' }]);
-                } catch(e) { alert("Error: " + e.message); }
+                } catch (e) { alert("Error: " + e.message); }
             };
 
             const handleUpdateFamily = async (e) => {
@@ -470,8 +530,8 @@
                 try {
                     const updateData = { guardianName: fd.get('gName'), familyRegNo: fd.get('cNo'), phone: fd.get('phone'), pendingBalance: fd.get('pBal') };
                     await updateDoc(doc(db, 'families', selectedFamily.id), updateData);
-                    setEditFamilyMode(false); setSelectedFamily({...selectedFamily, ...updateData});
-                } catch(e) { alert("Update failed"); }
+                    setEditFamilyMode(false); setSelectedFamily({ ...selectedFamily, ...updateData });
+                } catch (e) { alert("Update failed"); }
             };
 
             const handleAddStudent = async (e) => {
@@ -492,7 +552,7 @@
             };
 
             const handleDeleteStudent = async (sid) => {
-                if(!confirm("Delete?")) return;
+                if (!confirm("Delete?")) return;
                 const updated = selectedFamily.students.filter(s => s.id !== sid);
                 await updateDoc(doc(db, 'families', selectedFamily.id), { students: updated });
                 setSelectedFamily({ ...selectedFamily, students: updated });
@@ -501,50 +561,60 @@
             const handlePayment = async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
-                
-                const pay = { 
-                    id: generateId(), 
-                    amount: fd.get('amt'), 
-                    month: fd.get('mon'), 
-                    receiptNo: fd.get('rec'), 
+                const amountPaid = Number(fd.get('amt'));
+
+                const pay = {
+                    id: generateId(),
+                    amount: amountPaid,
+                    month: fd.get('mon'),
+                    receiptNo: fd.get('rec'),
                     date: fd.get('date')
                 };
 
                 const currentPayments = selectedFamily.payments || [];
                 const updatedPayments = [...currentPayments, pay];
-                
-                // Get all student names as a string for the receipt
+
+                // Deduct from Pending Balance
+                const currentPending = Number(selectedFamily.pendingBalance) || 0;
+                const newPending = Math.max(0, currentPending - amountPaid);
+
+                // Get all student names
                 const allStudents = selectedFamily.students?.map(s => s.studentName).join(', ') || 'N/A';
-                
-                await updateDoc(doc(db, 'families', selectedFamily.id), { payments: updatedPayments });
-                setSelectedFamily({ ...selectedFamily, payments: updatedPayments });
-                
-                setCurrentReceipt({ 
-                    ...pay, 
-                    studentNames: allStudents, 
-                    guardianName: selectedFamily.guardianName, 
+
+                await updateDoc(doc(db, 'families', selectedFamily.id), {
+                    payments: updatedPayments,
+                    pendingBalance: newPending
+                });
+
+                const updatedFamily = { ...selectedFamily, payments: updatedPayments, pendingBalance: newPending };
+                setSelectedFamily(updatedFamily);
+
+                setCurrentReceipt({
+                    ...pay,
+                    studentNames: allStudents,
+                    guardianName: selectedFamily.guardianName,
                     familyRegNo: selectedFamily.familyRegNo,
-                    pendingBalance: selectedFamily.pendingBalance 
+                    pendingBalance: newPending
                 });
                 setShowReceipt(true);
                 e.target.reset();
             };
 
             const handleDeletePayment = async (pid) => {
-                if(!confirm("Delete?")) return;
+                if (!confirm("Delete?")) return;
                 const updated = (selectedFamily.payments || []).filter(p => p.id !== pid);
                 await updateDoc(doc(db, 'families', selectedFamily.id), { payments: updated });
                 setSelectedFamily({ ...selectedFamily, payments: updated });
             };
 
             const handleDeleteFamily = async () => {
-                if(confirm("Delete entire account?")) { await deleteDoc(doc(db, 'families', selectedFamily.id)); setView('home'); setSelectedFamily(null); }
+                if (confirm("Delete entire account?")) { await deleteDoc(doc(db, 'families', selectedFamily.id)); setView('home'); setSelectedFamily(null); }
             };
 
             const handleWhatsAppShare = async (receipt, phone) => {
                 const element = document.getElementById('receipt-print');
-                if(!element) return;
-                
+                if (!element) return;
+
                 // 1. Prepare formatted message with ALL students and Madrsa Name
                 const message = `*${madrsaName} Receipt*\n` +
                     `----------------------------\n` +
@@ -555,24 +625,24 @@
                     `Amount: ₹${receipt.amount}\n` +
                     `----------------------------\n` +
                     `Thank you!`;
-                
+
                 // 2. Prepare WhatsApp URL (Text fallback)
                 const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
-                const waBase = (cleanPhone.length >= 10) 
-                    ? `https://wa.me/${cleanPhone.length===10?'91'+cleanPhone:cleanPhone}` 
+                const waBase = (cleanPhone.length >= 10)
+                    ? `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}`
                     : `https://wa.me/`;
                 const textUrl = `${waBase}?text=${encodeURIComponent(message)}`;
 
                 try {
                     // 3. Generate Image
                     const canvas = await window.html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
-                    
+
                     canvas.toBlob(async (blob) => {
-                        if (!blob) { 
-                            window.open(textUrl, '_blank'); 
-                            return; 
+                        if (!blob) {
+                            window.open(textUrl, '_blank');
+                            return;
                         }
-                        
+
                         const file = new File([blob], `Receipt_${receipt.receiptNo}.png`, { type: 'image/png' });
 
                         // 4. Check if Native Sharing is supported (Mobile)
@@ -592,7 +662,7 @@
                             link.download = `Receipt_${receipt.receiptNo}.png`;
                             link.href = canvas.toDataURL('image/png');
                             link.click();
-                            
+
                             setTimeout(() => {
                                 window.open(textUrl, '_blank');
                             }, 500);
@@ -606,7 +676,7 @@
 
             const handleDownloadImage = async () => {
                 const el = document.getElementById('receipt-print');
-                if(!el) return;
+                if (!el) return;
                 const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
                 const link = document.createElement('a'); link.download = `Receipt_${currentReceipt.receiptNo}.png`; link.href = canvas.toDataURL('image/png'); link.click();
             };
@@ -617,7 +687,7 @@
 
             return (
                 <div className="min-h-screen flex flex-col md:flex-row font-sans text-slate-700">
-                    
+
                     {/* SIDEBAR */}
                     <aside className="w-full md:w-64 bg-white border-r border-slate-200 flex-shrink-0 z-20 flex flex-col no-print md:h-screen md:sticky md:top-0">
                         <div className="p-6 border-b border-slate-100 flex items-center gap-3">
@@ -625,16 +695,16 @@
                             <div><h1 className="font-bold text-lg leading-none">Varisanghya</h1><p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{madrsaName}</p></div>
                         </div>
                         <nav className="p-4 space-y-2 flex-1">
-                            <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='dashboard' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><LayoutGrid size={18} /> Dashboard</button>
-                            <button onClick={() => setView('home')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='home'||view==='details' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><Users size={18} /> Accounts</button>
-                            <button onClick={() => setView('add')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='add' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><Plus size={18} /> New Family</button>
+                            <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view === 'dashboard' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><LayoutGrid size={18} /> Dashboard</button>
+                            <button onClick={() => setView('home')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view === 'home' || view === 'details' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><Users size={18} /> Accounts</button>
+                            <button onClick={() => setView('add')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view === 'add' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><Plus size={18} /> New Family</button>
                             <a href="admin.html" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition mt-8"><Home size={18} /> Back to Admin</a>
                         </nav>
                     </aside>
 
                     {/* MAIN CONTENT */}
                     <main className="flex-1 bg-[#f8fafc] md:h-screen md:overflow-y-auto no-print w-full">
-                        
+
                         <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center z-10">
                             <h2 className="text-xl font-bold text-slate-800 brand-font">{view === 'dashboard' ? 'Overview' : view === 'home' ? 'Family Accounts' : view === 'add' ? 'Registration' : 'Account Details'}</h2>
                             <div className="flex gap-2">
@@ -642,15 +712,15 @@
                                     <>
                                         <input type="file" ref={fileInputRef} onChange={handleImport} className="hidden" accept=".csv" />
                                         <button onClick={() => handleTemplateDownload()} className="bg-white border border-slate-200 text-teal-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-teal-50 flex items-center gap-2" title="Download Template"><FileText size={14} /></button>
-                                        <button onClick={() => fileInputRef.current.click()} disabled={importLoading} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-slate-50 flex items-center gap-2">{importLoading ? <Activity className="animate-spin" size={14}/> : <Upload size={14}/>} Import</button>
-                                        <button onClick={handleExport} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-slate-50 flex items-center gap-2"><Download size={14}/> Export</button>
+                                        <button onClick={() => fileInputRef.current.click()} disabled={importLoading} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-slate-50 flex items-center gap-2">{importLoading ? <Activity className="animate-spin" size={14} /> : <Upload size={14} />} Import</button>
+                                        <button onClick={handleExport} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-slate-50 flex items-center gap-2"><Download size={14} /> Export</button>
                                     </>
                                 )}
                             </div>
                         </header>
 
                         <div className="p-4 md:p-8 max-w-7xl mx-auto">
-                            
+
                             {/* DASHBOARD VIEW */}
                             {view === 'dashboard' && (
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -681,11 +751,11 @@
                                                 <input type="month" value={reportMonth} onChange={(e) => setReportMonth(e.target.value)} className="p-2 border rounded-lg text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-teal-200" />
                                             </div>
                                             <div className="flex gap-2">
-                                                <button onClick={() => handleDownloadReport('monthly')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50"><FileSpreadsheet size={16}/> Monthly Report</button>
-                                                <button onClick={() => handleDownloadReport('all')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-slate-900"><Download size={16}/> Overall Report</button>
+                                                <button onClick={() => handleDownloadReport('monthly')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50"><FileSpreadsheet size={16} /> Monthly Report</button>
+                                                <button onClick={() => handleDownloadReport('all')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-slate-900"><Download size={16} /> Overall Report</button>
                                             </div>
                                         </div>
-                                        
+
                                         {/* Monthly Stats Summary Row */}
                                         <div className="grid grid-cols-3 border-b border-slate-100 text-center bg-white">
                                             <div className="p-4 border-r border-slate-50">
@@ -704,28 +774,28 @@
 
                                         <div className="p-4 flex justify-between items-center bg-slate-50/50">
                                             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ledger for {reportMonth}</h4>
-                                            <button onClick={() => setShowExpenseModal(true)} className="text-xs flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-bold hover:bg-red-200 transition"><MinusCircle size={14}/> Add Expense</button>
+                                            <button onClick={() => setShowExpenseModal(true)} className="text-xs flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-bold hover:bg-red-200 transition"><MinusCircle size={14} /> Add Expense</button>
                                         </div>
 
                                         {monthlyStats.transactions.length === 0 ? <div className="p-10 text-center text-slate-400 italic">No records found for this month.</div> :
-                                        <table className="w-full text-sm text-left">
-                                            <thead className="bg-slate-50 text-slate-400 uppercase text-xs font-bold">
-                                                <tr><th className="p-4">Date</th><th className="p-4">Description</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4 text-center"></th></tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-50">
-                                                {monthlyStats.transactions.map((t, i) => (
-                                                    <tr key={i} className="hover:bg-slate-50">
-                                                        <td className="p-4 text-slate-500 font-mono text-xs">{t.date}</td>
-                                                        <td className="p-4 font-bold text-slate-700">{t.desc}</td>
-                                                        <td className="p-4"><span className={`px-2 py-1 rounded text-xs font-bold ${t.isExpense ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{t.type}</span></td>
-                                                        <td className={`p-4 text-right font-bold ${t.isExpense ? 'text-red-600' : 'text-green-600'}`}>₹{t.amount}</td>
-                                                        <td className="p-4 text-center">
-                                                            {t.isExpense && <button onClick={() => handleDeleteExpense(t.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14}/></button>}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>}
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-slate-50 text-slate-400 uppercase text-xs font-bold">
+                                                    <tr><th className="p-4">Date</th><th className="p-4">Description</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4 text-center"></th></tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {monthlyStats.transactions.map((t, i) => (
+                                                        <tr key={i} className="hover:bg-slate-50">
+                                                            <td className="p-4 text-slate-500 font-mono text-xs">{t.date}</td>
+                                                            <td className="p-4 font-bold text-slate-700">{t.desc}</td>
+                                                            <td className="p-4"><span className={`px-2 py-1 rounded text-xs font-bold ${t.isExpense ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{t.type}</span></td>
+                                                            <td className={`p-4 text-right font-bold ${t.isExpense ? 'text-red-600' : 'text-green-600'}`}>₹{t.amount}</td>
+                                                            <td className="p-4 text-center">
+                                                                {t.isExpense && <button onClick={() => handleDeleteExpense(t.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>}
                                     </div>
                                 </div>
                             )}
@@ -742,7 +812,7 @@
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {filteredFamilies.map(f => (
-                                            <div key={f.id} onClick={() => { setSelectedFamily(f); setView('details'); }} 
+                                            <div key={f.id} onClick={() => { setSelectedFamily(f); setView('details'); }}
                                                 className="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg hover:border-teal-200 transition cursor-pointer relative overflow-hidden">
                                                 <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-[100px] -mr-4 -mt-4 transition group-hover:bg-teal-100"></div>
                                                 <div className="relative z-10">
@@ -755,9 +825,9 @@
                                                     </div>
                                                     <h3 className="font-bold text-lg text-slate-800 truncate mb-1">{f.guardianName}</h3>
                                                     <p className="text-xs text-slate-400 font-mono mb-4">{f.phone || 'No Phone'}</p>
-                                                    
+
                                                     <div className="space-y-2">
-                                                        {f.students?.slice(0,2).map(s => (
+                                                        {f.students?.slice(0, 2).map(s => (
                                                             <div key={s.id} className="flex justify-between items-center text-xs bg-slate-50 p-2 rounded-lg group-hover:bg-white transition">
                                                                 <span className="font-bold text-slate-600">{s.studentName}</span>
                                                                 <span className="text-slate-400">{s.regNo}</span>
@@ -780,12 +850,12 @@
                                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-blue-500"></div>
                                         <div className="flex justify-between items-center mb-8">
                                             <h2 className="text-2xl font-bold text-slate-800">New Registration</h2>
-                                            <button onClick={() => setView('dashboard')} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-500 transition"><X size={18}/></button>
+                                            <button onClick={() => setView('dashboard')} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-500 transition"><X size={18} /></button>
                                         </div>
-                                        
+
                                         <form onSubmit={handleCreateFamily} className="space-y-6">
                                             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                                                <h3 className="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center gap-2"><User size={14}/> Guardian Info</h3>
+                                                <h3 className="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center gap-2"><User size={14} /> Guardian Info</h3>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <input required name="guardianName" placeholder="Guardian Name" className="col-span-2 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 font-bold text-slate-700" />
                                                     <input required name="familyRegNo" placeholder="Card Number" className="p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200" />
@@ -799,21 +869,21 @@
 
                                             <div className="p-5 bg-teal-50/50 rounded-2xl border border-teal-100">
                                                 <div className="flex justify-between items-center mb-4">
-                                                    <h3 className="text-xs font-bold text-teal-600 uppercase flex items-center gap-2"><UserPlus size={14}/> Students</h3>
+                                                    <h3 className="text-xs font-bold text-teal-600 uppercase flex items-center gap-2"><UserPlus size={14} /> Students</h3>
                                                     <button type="button" onClick={() => setCreateStudentsList([...createStudentsList, { studentName: '', regNo: '', year: '', studentClass: '' }])} className="text-xs text-teal-700 font-bold bg-white px-2 py-1 rounded shadow-sm hover:bg-teal-100 transition">+ Add Row</button>
                                                 </div>
-                                                
+
                                                 <div className="space-y-3">
                                                     {createStudentsList.map((s, i) => (
                                                         <div key={i} className="flex gap-2">
-                                                            <input placeholder="Name" className="flex-1 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.studentName} onChange={e => {const l=[...createStudentsList]; l[i].studentName=e.target.value; setCreateStudentsList(l)}} />
-                                                            <select className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.studentClass} onChange={e => {const l=[...createStudentsList]; l[i].studentClass=e.target.value; setCreateStudentsList(l)}}>
+                                                            <input placeholder="Name" className="flex-1 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.studentName} onChange={e => { const l = [...createStudentsList]; l[i].studentName = e.target.value; setCreateStudentsList(l) }} />
+                                                            <select className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.studentClass} onChange={e => { const l = [...createStudentsList]; l[i].studentClass = e.target.value; setCreateStudentsList(l) }}>
                                                                 <option value="">Class</option>
                                                                 {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
                                                             </select>
-                                                            <input placeholder="Reg" className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.regNo} onChange={e => {const l=[...createStudentsList]; l[i].regNo=e.target.value; setCreateStudentsList(l)}} />
-                                                            <input placeholder="Year" className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.year} onChange={e => {const l=[...createStudentsList]; l[i].year=e.target.value; setCreateStudentsList(l)}} />
-                                                            {createStudentsList.length > 1 && <button type="button" onClick={() => {const l=[...createStudentsList]; l.splice(i,1); setCreateStudentsList(l)}} className="text-red-400 hover:text-red-600"><MinusCircle size={20}/></button>}
+                                                            <input placeholder="Reg" className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.regNo} onChange={e => { const l = [...createStudentsList]; l[i].regNo = e.target.value; setCreateStudentsList(l) }} />
+                                                            <input placeholder="Year" className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.year} onChange={e => { const l = [...createStudentsList]; l[i].year = e.target.value; setCreateStudentsList(l) }} />
+                                                            {createStudentsList.length > 1 && <button type="button" onClick={() => { const l = [...createStudentsList]; l.splice(i, 1); setCreateStudentsList(l) }} className="text-red-400 hover:text-red-600"><MinusCircle size={20} /></button>}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -841,7 +911,7 @@
                                             {/* Family Card */}
                                             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-100 to-transparent rounded-bl-[100px] -mr-8 -mt-8"></div>
-                                                
+
                                                 {!editFamilyMode ? (
                                                     <>
                                                         <h2 className="text-2xl font-bold text-slate-800 relative z-10">{selectedFamily.guardianName}</h2>
@@ -852,12 +922,12 @@
                                                             </div>
                                                             {Number(selectedFamily.pendingBalance) > 0 ? (
                                                                 <div className="flex items-center gap-2 bg-red-50 p-2 rounded-lg border border-red-100 w-fit">
-                                                                    <History size={14} className="text-red-500"/>
+                                                                    <History size={14} className="text-red-500" />
                                                                     <span className="text-xs font-bold text-red-600">Prev. Pending: ₹{selectedFamily.pendingBalance}</span>
                                                                 </div>
                                                             ) : (
                                                                 <div className="flex items-center gap-2 bg-green-50 p-2 rounded-lg border border-green-100 w-fit opacity-70">
-                                                                    <History size={14} className="text-green-500"/>
+                                                                    <History size={14} className="text-green-500" />
                                                                     <span className="text-xs font-bold text-green-600">No Previous Dues</span>
                                                                 </div>
                                                             )}
@@ -877,7 +947,7 @@
                                                         <button className="w-full bg-blue-600 text-white py-1 rounded text-xs font-bold mt-2">Save Changes</button>
                                                     </form>
                                                 )}
-                                                
+
                                                 {/* Student List with Edit Option */}
                                                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
                                                     <p className="text-xs font-bold text-slate-400 uppercase mb-2">Children</p>
@@ -892,8 +962,8 @@
                                                                             <p className="text-xs text-slate-400">Class: {s.studentClass || '-'} • {s.regNo || 'No Reg'}</p>
                                                                         </div>
                                                                         <div className="flex gap-2">
-                                                                            <button onClick={() => setEditingStudentId(s.id)} className="text-blue-400 hover:text-blue-600"><Edit2 size={14}/></button>
-                                                                            <button onClick={() => handleDeleteStudent(s.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14}/></button>
+                                                                            <button onClick={() => setEditingStudentId(s.id)} className="text-blue-400 hover:text-blue-600"><Edit2 size={14} /></button>
+                                                                            <button onClick={() => handleDeleteStudent(s.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
                                                                         </div>
                                                                     </div>
                                                                 ) : (
@@ -938,7 +1008,7 @@
                                         {/* RIGHT COL: PAYMENT INTERFACE & HISTORY */}
                                         <div className="lg:col-span-8">
                                             <div className="space-y-6 animate-in fade-in">
-                                                
+
                                                 {/* Family Financial Header */}
                                                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-teal-100 flex items-center justify-between">
                                                     <div className="flex items-center gap-4">
@@ -952,12 +1022,12 @@
 
                                                 {/* Payment Form */}
                                                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                                                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><CreditCard size={18}/> Record Payment</h3>
+                                                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><CreditCard size={18} /> Record Payment</h3>
                                                     <form onSubmit={handlePayment} className="grid grid-cols-4 gap-3 items-end">
                                                         <div className="col-span-2">
                                                             <label className="text-[10px] font-bold text-slate-400 uppercase">Month</label>
                                                             <select name="mon" className="w-full p-2.5 border rounded-lg bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100">
-                                                                {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m=><option key={m}>{m}</option>)}
+                                                                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(m => <option key={m}>{m}</option>)}
                                                             </select>
                                                         </div>
                                                         <div className="col-span-2 md:col-span-1">
@@ -969,7 +1039,7 @@
                                                             <input name="rec" required placeholder="#" className="w-full p-2.5 border rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100" />
                                                         </div>
                                                         <input type="hidden" name="date" value={new Date().toISOString().split('T')[0]} />
-                                                        <button className="col-span-4 md:col-span-4 bg-teal-500 text-white p-2.5 rounded-lg font-bold text-sm hover:bg-teal-600 shadow-md transition flex justify-center items-center gap-2"><CreditCard size={16}/> Pay Now</button>
+                                                        <button className="col-span-4 md:col-span-4 bg-teal-500 text-white p-2.5 rounded-lg font-bold text-sm hover:bg-teal-600 shadow-md transition flex justify-center items-center gap-2"><CreditCard size={16} /> Pay Now</button>
                                                     </form>
                                                 </div>
 
@@ -990,9 +1060,9 @@
                                                                     <td className="p-4"><span className="bg-teal-50 text-teal-700 px-2 py-1 rounded text-xs font-bold">{p.month}</span></td>
                                                                     <td className="p-4 text-right font-bold text-slate-800">₹{p.amount}</td>
                                                                     <td className="p-4 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
-                                                                        <button onClick={() => { setCurrentReceipt({...p, studentNames:(selectedFamily.students?.map(s=>s.studentName).join(', ')||'N/A'), guardianName:selectedFamily.guardianName, familyRegNo:selectedFamily.familyRegNo, pendingBalance:selectedFamily.pendingBalance, month:p.month});setShowReceipt(true);}} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded"><Printer size={16}/></button>
-                                                                        <button onClick={() => handleDeletePayment(p.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 size={16}/></button>
-                                                                        <button onClick={() => handleWhatsAppShare(p, selectedFamily.phone)} className="text-green-500 hover:bg-green-50 p-1.5 rounded"><MessageCircle size={16}/></button>
+                                                                        <button onClick={() => { setCurrentReceipt({ ...p, studentNames: (selectedFamily.students?.map(s => s.studentName).join(', ') || 'N/A'), guardianName: selectedFamily.guardianName, familyRegNo: selectedFamily.familyRegNo, pendingBalance: selectedFamily.pendingBalance, month: p.month }); setShowReceipt(true); }} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded"><Printer size={16} /></button>
+                                                                        <button onClick={() => handleDeletePayment(p.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 size={16} /></button>
+                                                                        <button onClick={() => handleWhatsAppShare(p, selectedFamily.phone)} className="text-green-500 hover:bg-green-50 p-1.5 rounded"><MessageCircle size={16} /></button>
                                                                     </td>
                                                                 </tr>
                                                             ))}
@@ -1012,10 +1082,10 @@
                     {showReceipt && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print animate-in fade-in">
                             <div className="bg-white w-full max-w-xl rounded-sm shadow-2xl overflow-hidden transform scale-100 transition">
-                                
+
                                 <div className="bg-slate-800 p-4 flex justify-between items-center text-white border-b border-slate-700">
                                     <h3 className="font-bold tracking-wide flex items-center gap-2"><i className="fas fa-print"></i> Print Receipt</h3>
-                                    <button onClick={() => setShowReceipt(false)} className="hover:bg-slate-700 p-1 rounded transition"><X size={20}/></button>
+                                    <button onClick={() => setShowReceipt(false)} className="hover:bg-slate-700 p-1 rounded transition"><X size={20} /></button>
                                 </div>
 
                                 <div id="receipt-print" className="bg-white p-8 text-slate-800 relative">
@@ -1046,9 +1116,9 @@
                                             <p className="text-xs text-slate-500">Family ID: <span className="font-mono font-bold">{currentReceipt.familyRegNo}</span></p>
                                         </div>
                                         <div className="text-right">
-                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payment Month</p>
-                                             <h3 className="text-lg font-bold text-teal-700 capitalize">{currentReceipt.month}</h3>
-                                             <p className="text-xs text-slate-500">Academic Year: {new Date().getFullYear()}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payment Month</p>
+                                            <h3 className="text-lg font-bold text-teal-700 capitalize">{currentReceipt.month}</h3>
+                                            <p className="text-xs text-slate-500">Academic Year: {new Date().getFullYear()}</p>
                                         </div>
                                     </div>
 
@@ -1090,7 +1160,7 @@
                                             <p>This is a computer-generated receipt.</p>
                                         </div>
                                         <div className="text-center">
-                                            <div className="font-serif text-xl text-slate-800 mb-1 font-bold" style={{fontFamily: 'cursive'}}>Authorized</div>
+                                            <div className="font-serif text-xl text-slate-800 mb-1 font-bold" style={{ fontFamily: 'cursive' }}>Authorized</div>
                                             <div className="h-px w-32 bg-slate-300"></div>
                                             <p className="text-[9px] uppercase font-bold text-slate-400 mt-1 tracking-widest">Signatory</p>
                                         </div>
@@ -1121,7 +1191,7 @@
                                     <input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full p-2 border rounded" />
                                     <div className="flex gap-2 pt-2">
                                         <button className="flex-1 bg-red-600 text-white py-2 rounded font-bold">Add</button>
-                                        <button type="button" onClick={()=>setShowExpenseModal(false)} className="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+                                        <button type="button" onClick={() => setShowExpenseModal(false)} className="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
                                     </div>
                                 </form>
                             </div>
@@ -1135,4 +1205,5 @@
         root.render(<VarisanghyaApp />);
     </script>
 </body>
+
 </html>
