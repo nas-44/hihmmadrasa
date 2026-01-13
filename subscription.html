@@ -20,7 +20,9 @@
       "imports": {
         "react": "https://esm.sh/react@18.2.0",
         "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "react-dom": "https://esm.sh/react-dom@18.2.0", 
         "lucide-react": "https://esm.sh/lucide-react@0.294.0",
+        "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom",
         "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
         "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
         "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
@@ -64,6 +66,7 @@
         import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, where, getDocs, initializeFirestore } from 'firebase/firestore';
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
         import { Search, Plus, User, Users, Printer, CreditCard, X, Trash2, ChevronRight, LayoutGrid, Hash, UserPlus, Download, Upload, TrendingUp, TrendingDown, IndianRupee, Activity, Edit2, MinusCircle, Cloud, AlertTriangle, Save, Home, FileText, Calendar, Wallet, History, MessageCircle, Share2, ImageDown, PieChart, FileSpreadsheet, Menu, ArrowLeft, Bell } from 'lucide-react';
+        import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
         const firebaseConfig = {
             apiKey: "AIzaSyARMtUmA4fxEr4jwHpcMxMXNGifKLKzfn0",
@@ -134,22 +137,54 @@
             // Stats
             const stats = useMemo(() => {
                 let fams=families.length, studs=0, rev=0, pend=0, rec=[], exp=0;
+                
                 families.forEach(f => {
                     if (f.students) studs += f.students.length;
                     if (f.pendingBalance) pend += Number(f.pendingBalance) || 0;
-                    if (f.payments) f.payments.forEach(p => { 
-                        if (!p.date) return;
-                        if (dashboardMode === 'month' && !p.date.startsWith(reportMonth)) return;
-                        rev += Number(p.amount)||0; 
-                        rec.push({...p, type:'income', familyName:f.guardianName, cardNo:f.familyRegNo, studentName:'Family', phone:f.phone}); 
-                    });
+                    
+                    if (f.payments) {
+                        f.payments.forEach(p => {
+                            if (!p.date) return;
+                            if (dashboardMode === 'month' && !p.date.startsWith(reportMonth)) return;
+                            
+                            rev += Number(p.amount)||0; 
+                            rec.push({...p, type:'income', familyName:f.guardianName, cardNo:f.familyRegNo, studentName:'Family', phone:f.phone}); 
+                        });
+                    }
                 });
+
                 expenses.forEach(e => {
                     if (!e.date) return;
                     if (dashboardMode === 'month' && !e.date.startsWith(reportMonth)) return;
                     exp += Number(e.amount)||0;
                 });
-                return { fams, studs, rev, expTotal: exp, netBalance: rev-exp, pendingTotal: pend, recent: rec.sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,5) };
+                
+                // Chart Data
+                const chartData = [];
+                for(let i=5; i>=0; i--) {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    const mKey = d.toISOString().slice(0, 7); 
+                    const mName = d.toLocaleString('default', { month: 'short' });
+                    
+                    let mInc = 0;
+                    let mExp = 0;
+                    
+                    families.forEach(f => f.payments?.forEach(p => { if(p.date && p.date.startsWith(mKey)) mInc += Number(p.amount)||0; }));
+                    expenses.forEach(e => { if(e.date && e.date.startsWith(mKey)) mExp += Number(e.amount)||0; });
+                    
+                    chartData.push({ name: mName, Income: mInc, Expense: mExp });
+                }
+
+                // Top Pending
+                const topPending = [...families].sort((a,b) => (Number(b.pendingBalance)||0) - (Number(a.pendingBalance)||0)).slice(0, 5).filter(f => Number(f.pendingBalance) > 0);
+
+                return { 
+                    fams, studs, rev, expTotal: exp, netBalance: rev-exp, pendingTotal: pend, 
+                    recent: rec.sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,5),
+                    chartData,
+                    topPending
+                };
             }, [families, expenses, dashboardMode, reportMonth]);
 
             const monthlyStats = useMemo(() => {
@@ -212,7 +247,7 @@
                 setSelectedFamily({...selectedFamily, payments:updated, pendingBalance: newPending}); 
             };
             
-            // CRUD
+            // Standard CRUD
             const handleCreateFamily = async (e) => { e.preventDefault(); const fd=new FormData(e.target); const s=createStudentsList.filter(x=>x.studentName); await addDoc(collection(db,'families'),{guardianName:fd.get('guardianName'), familyRegNo:fd.get('familyRegNo'), phone:fd.get('phone'), pendingBalance:fd.get('pendingBalance'), students:s, payments:[], createdAt:serverTimestamp()}); setView('home'); setCreateStudentsList([{id:'init',studentName:'',regNo:'',year:new Date().getFullYear(),studentClass:''}]); };
             const handleUpdateFamily = async (e) => { e.preventDefault(); const fd=new FormData(e.target); const u={guardianName:fd.get('gName'), familyRegNo:fd.get('cNo'), phone:fd.get('phone'), pendingBalance:fd.get('pBal')}; await updateDoc(doc(db,'families',selectedFamily.id),u); setEditFamilyMode(false); setSelectedFamily({...selectedFamily,...u}); };
             const handleAddStudent = async (e) => { e.preventDefault(); const fd=new FormData(e.target); const n={id:generateId(), studentName:fd.get('sName'), regNo:fd.get('sReg'), year:fd.get('sYear'), studentClass:fd.get('sClass')}; const u=[...(selectedFamily.students||[]),n]; await updateDoc(doc(db,'families',selectedFamily.id),{students:u}); setSelectedFamily({...selectedFamily,students:u}); e.target.reset(); };
@@ -267,10 +302,137 @@
                         <header className="flex-shrink-0 bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center z-10 sticky top-0"><div className="flex items-center gap-3"><button className="md:hidden p-2 text-slate-600" onClick={() => setIsSidebarOpen(true)}><Menu size={24}/></button><h2 className="text-lg font-bold text-slate-800 brand-font flex items-center gap-2">{view === 'details' && <button onClick={()=>setView('home')}><ArrowLeft size={20}/></button>}{view==='dashboard'?'Overview':view==='home'?'Accounts':view==='add'?'Register':'Details'}</h2></div><div className="flex gap-2">{view === 'home' && <><input type="file" ref={fileInputRef} onChange={handleImport} className="hidden" accept=".csv" /><button onClick={() => fileInputRef.current.click()} disabled={importLoading} className="hidden md:flex bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold items-center gap-2"><Upload size={14}/> Import</button><button onClick={handleExport} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2"><Download size={14}/> <span className="hidden md:inline">Export</span></button></>}</div></header>
 
                         <div className="flex-1 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
-                            {view === 'dashboard' && <div className="space-y-6 animate-in fade-in"><div className="flex bg-slate-200 p-1 rounded-lg w-fit mx-auto md:mx-0"><button onClick={()=>setDashboardMode('month')} className={`px-4 py-1 rounded-md text-sm font-bold transition ${dashboardMode==='month'?'bg-white shadow text-teal-700':'text-slate-500'}`}>Month</button><button onClick={()=>setDashboardMode('year')} className={`px-4 py-1 rounded-md text-sm font-bold transition ${dashboardMode==='year'?'bg-white shadow text-teal-700':'text-slate-500'}`}>Year</button></div><div className="grid grid-cols-2 lg:grid-cols-4 gap-3"><div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Income</p><h3 className="text-xl font-black text-slate-800">₹{stats.rev.toLocaleString()}</h3></div><div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Expense</p><h3 className="text-xl font-black text-slate-800">₹{stats.expTotal.toLocaleString()}</h3></div><div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Net</p><h3 className={`text-xl font-black ${stats.netBalance>=0?'text-teal-600':'text-red-600'}`}>₹{stats.netBalance.toLocaleString()}</h3></div><div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Pending</p><h3 className="text-xl font-black text-slate-800">₹{stats.pendingTotal.toLocaleString()}</h3></div></div><div className="bg-teal-600 text-white p-4 rounded-2xl shadow-lg flex justify-between items-center cursor-pointer active:scale-95 transition" onClick={()=>setShowExpenseModal(true)}><span className="font-bold">Add Expense</span><div className="bg-white/20 p-2 rounded-lg"><MinusCircle size={20}/></div></div></div>}
-                            {view === 'home' && <div className="space-y-4 animate-in fade-in"><div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar"><button onClick={()=>setHomeFilter('all')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border ${homeFilter==='all'?'bg-slate-800 text-white border-slate-800':'bg-white text-slate-600 border-slate-200'}`}>All</button><button onClick={()=>setHomeFilter('due')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border ${homeFilter==='due'?'bg-red-50 text-red-600 border-red-200':'bg-white text-slate-600 border-slate-200'}`}>Pending</button></div><div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex items-center px-3 gap-2"><Search className="text-slate-400" size={18} /><input className="w-full py-2 outline-none text-sm font-medium text-slate-600 placeholder:text-slate-300 bg-transparent" placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="space-y-3">{filteredFamilies.map(f => <div key={f.id} onClick={() => { setSelectedFamily(f); setView('details'); }} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 active:scale-95 transition-transform"><div className="flex justify-between items-start mb-2"><span className="bg-slate-800 text-white px-2 py-0.5 rounded text-xs font-bold">#{f.familyRegNo}</span><div className="flex items-center gap-2">{Number(f.pendingBalance) > 0 && <button onClick={(e)=>{e.stopPropagation();handleWhatsAppReminder(f)}} className="p-1.5 bg-red-100 text-red-600 rounded-full animate-pulse"><Bell size={12}/></button>}{Number(f.pendingBalance) > 0 && <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">₹{f.pendingBalance}</span>}</div></div><h3 className="font-bold text-base text-slate-800">{f.guardianName}</h3><p className="text-xs text-slate-400 mt-1">{f.students?.map(s=>`${s.studentName} (${s.studentClass})`).join(', ') || 'No Students'}</p></div>)}{filteredFamilies.length === 0 && <div className="text-center py-20 text-slate-400 italic text-sm">No accounts found.</div>}</div></div>}
-                            {view === 'add' && <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 animate-in slide-in-from-bottom-8"><h2 className="text-xl font-bold text-slate-800 mb-6">New Family</h2><form onSubmit={handleCreateFamily} className="space-y-4"><div className="space-y-3"><input required name="guardianName" placeholder="Guardian Name" className="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-200" /><div className="flex gap-2"><input required name="familyRegNo" placeholder="Card No" className="w-1/2 p-3 border rounded-xl bg-slate-50 text-sm outline-none" /><input name="phone" placeholder="Phone" className="w-1/2 p-3 border rounded-xl bg-slate-50 text-sm outline-none" /></div><input name="pendingBalance" type="number" placeholder="Pending Balance (Opt)" className="w-full p-3 border border-red-100 bg-red-50 text-sm outline-none text-red-600 font-bold rounded-xl" /></div><div className="pt-4 border-t border-slate-100"><div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-slate-400 uppercase">Student</span><button type="button" onClick={() => setCreateStudentsList([...createStudentsList, { studentName: '', regNo: '', year: '', studentClass: '' }])} className="text-xs text-teal-700 font-bold">+ Add</button></div>{createStudentsList.map((s, i) => <div key={i} className="flex gap-2 mb-2"><input placeholder="Name" className="flex-1 p-2 border rounded-lg text-sm" value={s.studentName} onChange={e => {const l=[...createStudentsList]; l[i].studentName=e.target.value; setCreateStudentsList(l)}} /><input placeholder="Cls" className="w-12 p-2 border rounded-lg text-sm" value={s.studentClass} onChange={e => {const l=[...createStudentsList]; l[i].studentClass=e.target.value; setCreateStudentsList(l)}} /></div>)}</div><button className="w-full py-3.5 bg-teal-600 text-white rounded-xl font-bold shadow-lg shadow-teal-200">Create Account</button></form></div>}
-                            {view === 'details' && selectedFamily && <div className="space-y-6 animate-in slide-in-from-right-4"><div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><div className="flex justify-between items-start mb-4"><div><h2 className="text-xl font-bold text-slate-800">{selectedFamily.guardianName}</h2><span className="text-xs text-slate-400 font-mono">#{selectedFamily.familyRegNo}</span></div><div className="flex gap-2"><button onClick={()=>setEditFamilyMode(!editFamilyMode)} className="p-2 bg-blue-50 text-blue-500 rounded-lg"><Edit2 size={16}/></button><button onClick={handleDeleteFamily} className="p-2 bg-red-50 text-red-500 rounded-lg"><Trash2 size={16}/></button></div></div>{!editFamilyMode ? <div className="flex flex-col gap-2 bg-slate-50 p-3 rounded-xl mb-4">{selectedFamily.students?.map(s => <div key={s.id} className="text-sm font-bold text-slate-600 flex justify-between"><span>{s.studentName}</span> <span className="text-xs bg-white px-2 rounded border">Cls {s.studentClass}</span></div>)}<div className="border-t border-slate-200 pt-2 mt-1"><form onSubmit={handleAddStudent} className="flex gap-2"><input name="sName" placeholder="New Child" className="flex-1 p-1.5 text-xs border rounded" required /><input name="sClass" placeholder="Cls" className="w-12 p-1.5 text-xs border rounded" required /><button className="bg-slate-800 text-white px-3 rounded text-xs font-bold">Add</button></form></div></div> : <form onSubmit={handleUpdateFamily} className="mb-4 space-y-2 bg-slate-50 p-3 rounded-xl"><input name="gName" defaultValue={selectedFamily.guardianName} className="w-full p-2 border rounded text-sm" /><div className="flex gap-2"><input name="cNo" defaultValue={selectedFamily.familyRegNo} className="w-1/2 p-2 border rounded text-sm" /><input name="phone" defaultValue={selectedFamily.phone} className="w-1/2 p-2 border rounded text-sm" /></div><div className="pt-2"><label className="text-[10px] font-bold text-red-500 uppercase">Pending Due</label><input name="pBal" type="number" defaultValue={selectedFamily.pendingBalance} className="w-full p-2 border border-red-200 rounded text-sm font-bold text-red-600" /></div><button className="w-full bg-blue-600 text-white py-2 rounded text-xs font-bold">Save Changes</button></form>}<button onClick={()=>{setEditingPayment(null); setShowPaymentModal(true)}} className="w-full py-3 bg-teal-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"><CreditCard size={18}/> Pay Now</button><div className="mt-6"><h4 className="text-xs font-bold text-slate-400 uppercase mb-3">History</h4><div className="space-y-2">{selectedFamily.payments?.slice().reverse().map((p, i) => <div key={i} className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm"><div><p className="font-bold text-sm text-slate-700">₹{p.amount}</p><p className="text-xs text-slate-400">{p.month} • {p.date}</p></div><div className="flex gap-2"><button onClick={() => { setCurrentReceipt({...p, studentNames:(selectedFamily.students?.map(s=>s.studentName).join(', ')||'N/A'), guardianName:selectedFamily.guardianName, familyRegNo:selectedFamily.familyRegNo, pendingBalance:selectedFamily.pendingBalance, month:p.month});setShowReceipt(true);}} className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Printer size={16}/></button><button onClick={() => openEditPayment(p)} className="p-2 bg-slate-100 text-slate-600 rounded-lg"><Edit2 size={16}/></button></div></div>)}</div></div></div></div>}
+                            <div className="max-w-7xl mx-auto w-full">
+                                {view === 'dashboard' && (
+                                    <div className="space-y-6 animate-in fade-in">
+                                        <div className="flex bg-slate-200 p-1 rounded-lg w-fit mx-auto md:mx-0"><button onClick={()=>setDashboardMode('month')} className={`px-4 py-1 rounded-md text-sm font-bold transition ${dashboardMode==='month'?'bg-white shadow text-teal-700':'text-slate-500'}`}>Month</button><button onClick={()=>setDashboardMode('year')} className={`px-4 py-1 rounded-md text-sm font-bold transition ${dashboardMode==='year'?'bg-white shadow text-teal-700':'text-slate-500'}`}>Year</button></div>
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Income</p><h3 className="text-xl font-black text-slate-800">₹{stats.rev.toLocaleString()}</h3></div>
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Expense</p><h3 className="text-xl font-black text-slate-800">₹{stats.expTotal.toLocaleString()}</h3></div>
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Net</p><h3 className={`text-xl font-black ${stats.netBalance>=0?'text-teal-600':'text-red-600'}`}>₹{stats.netBalance.toLocaleString()}</h3></div>
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Pending</p><h3 className="text-xl font-black text-slate-800">₹{stats.pendingTotal.toLocaleString()}</h3></div>
+                                        </div>
+                                        
+                                        <div className="grid md:grid-cols-3 gap-6">
+                                            <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                                <h3 className="font-bold text-sm text-slate-500 uppercase mb-4">Financial Trends (6 Months)</h3>
+                                                <div className="h-64">
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <BarChart data={stats.chartData}>
+                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#64748b', fontSize:12}} />
+                                                            <YAxis axisLine={false} tickLine={false} tick={{fill:'#64748b', fontSize:12}} />
+                                                            <Tooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '8px', border:'none', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.1)'}} />
+                                                            <Legend />
+                                                            <Bar dataKey="Income" fill="#0d9488" radius={[4, 4, 0, 0]} />
+                                                            <Bar dataKey="Expense" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                                <h3 className="font-bold text-sm text-slate-500 uppercase mb-4">Top Pending Dues</h3>
+                                                <div className="space-y-3">
+                                                    {stats.topPending.length === 0 ? <p className="text-xs text-slate-400 italic">No pending dues.</p> : stats.topPending.map(f => (
+                                                        <div key={f.id} className="flex justify-between items-center pb-2 border-b border-slate-50 last:border-0">
+                                                            <div className="truncate pr-2"><p className="font-bold text-sm text-slate-700 truncate w-32">{f.guardianName}</p><p className="text-[10px] text-slate-400">#{f.familyRegNo}</p></div>
+                                                            <div className="text-right"><p className="font-bold text-red-600 text-sm">₹{f.pendingBalance}</p><button onClick={()=>handleWhatsAppReminder(f)} className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded mt-1 flex items-center gap-1 ml-auto"><MessageCircle size={10}/> Remind</button></div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <button onClick={()=>{setHomeFilter('due');setView('home')}} className="w-full mt-4 text-xs font-bold text-blue-600 hover:bg-blue-50 py-2 rounded transition">View All Dues</button>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                                            <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50">
+                                                <div className="flex items-center gap-4 w-full md:w-auto"><h3 className="font-bold text-sm text-slate-700">Detailed Ledger</h3><input type="month" value={reportMonth} onChange={(e) => setReportMonth(e.target.value)} className="p-1.5 border rounded-lg text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-teal-200" /></div>
+                                                <div className="flex gap-2 w-full md:w-auto overflow-x-auto">
+                                                    <button onClick={() => handleDownloadReport('monthly')} className="flex-1 md:flex-none flex justify-center items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50 whitespace-nowrap"><FileSpreadsheet size={14}/> Monthly</button>
+                                                    <button onClick={() => handleDownloadReport('all')} className="flex-1 md:flex-none flex justify-center items-center gap-2 px-3 py-1.5 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 whitespace-nowrap"><Download size={14}/> Report</button>
+                                                </div>
+                                            </div>
+                                            <div className="overflow-x-auto no-scrollbar">
+                                                {monthlyStats.transactions.length === 0 ? <div className="p-8 text-center text-xs text-slate-400 italic">No records found.</div> :
+                                                <div className="min-w-[500px]">
+                                                    <div className="bg-slate-50 text-slate-400 uppercase text-[10px] font-bold flex p-3"><div className="w-24">Date</div><div className="flex-1">Desc</div><div className="w-16 text-right">Amt</div><div className="w-10"></div></div>
+                                                    {monthlyStats.transactions.map((t, i) => (
+                                                        <div key={i} className="flex p-3 border-b border-slate-50 items-center text-xs">
+                                                            <div className="w-24 text-slate-500 font-mono">{t.date}</div>
+                                                            <div className="flex-1 font-bold text-slate-700 truncate pr-2">{t.desc}</div>
+                                                            <div className={`w-16 text-right font-bold ${t.isExpense ? 'text-red-600' : 'text-green-600'}`}>₹{t.amount}</div>
+                                                            <div className="w-10 text-center">{t.isExpense && <button onClick={() => handleDeleteExpense(t.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14}/></button>}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {view === 'home' && (
+                                    <div className="space-y-4 animate-in fade-in">
+                                        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar"><button onClick={()=>setHomeFilter('all')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border ${homeFilter==='all'?'bg-slate-800 text-white border-slate-800':'bg-white text-slate-600 border-slate-200'}`}>All</button><button onClick={()=>setHomeFilter('due')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border ${homeFilter==='due'?'bg-red-50 text-red-600 border-red-200':'bg-white text-slate-600 border-slate-200'}`}>Pending</button></div>
+                                        <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex items-center px-3 gap-2"><Search className="text-slate-400" size={18} /><input className="w-full py-2 outline-none text-sm font-medium text-slate-600 placeholder:text-slate-300 bg-transparent" placeholder="Search accounts..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                            {filteredFamilies.map(f => (
+                                                <div key={f.id} onClick={() => { setSelectedFamily(f); setView('details'); }} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 active:scale-95 transition-transform hover:shadow-md cursor-pointer">
+                                                    <div className="flex justify-between items-start mb-2"><span className="bg-slate-800 text-white px-2 py-0.5 rounded text-[10px] font-bold">#{f.familyRegNo}</span><div className="flex items-center gap-2">{Number(f.pendingBalance) > 0 && <button onClick={(e)=>{e.stopPropagation();handleWhatsAppReminder(f)}} className="p-1.5 bg-red-100 text-red-600 rounded-full animate-pulse"><Bell size={12}/></button>}{Number(f.pendingBalance) > 0 && <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">₹{f.pendingBalance}</span>}</div></div>
+                                                    <h3 className="font-bold text-sm text-slate-800 truncate">{f.guardianName}</h3>
+                                                    <p className="text-xs text-slate-400 mt-1 truncate">{f.students?.map(s=>`${s.studentName} (${s.studentClass})`).join(', ') || 'No Students'}</p>
+                                                </div>
+                                            ))}
+                                            {filteredFamilies.length === 0 && <div className="col-span-full text-center py-20 text-slate-400 italic text-sm">No accounts found.</div>}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {view === 'add' && (
+                                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 animate-in slide-in-from-bottom-8">
+                                        <h2 className="text-xl font-bold text-slate-800 mb-6">New Family</h2>
+                                        <form onSubmit={handleCreateFamily} className="space-y-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <input required name="guardianName" placeholder="Guardian Name" className="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-200 md:col-span-2" />
+                                                <input required name="familyRegNo" placeholder="Card No" className="w-full p-3 border rounded-xl bg-slate-50 text-sm outline-none" />
+                                                <input name="phone" placeholder="Phone" className="w-full p-3 border rounded-xl bg-slate-50 text-sm outline-none" />
+                                                <input name="pendingBalance" type="number" placeholder="Pending Balance (Opt)" className="w-full p-3 border border-red-100 bg-red-50 text-sm outline-none text-red-600 font-bold rounded-xl md:col-span-2" />
+                                            </div>
+                                            <div className="pt-4 border-t border-slate-100">
+                                                <div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-slate-400 uppercase">Student</span><button type="button" onClick={() => setCreateStudentsList([...createStudentsList, { studentName: '', regNo: '', year: '', studentClass: '' }])} className="text-xs text-teal-700 font-bold">+ Add</button></div>
+                                                {createStudentsList.map((s, i) => (
+                                                    <div key={i} className="flex gap-2 mb-2">
+                                                        <input placeholder="Name" className="flex-1 p-2 border rounded-lg text-sm" value={s.studentName} onChange={e => {const l=[...createStudentsList]; l[i].studentName=e.target.value; setCreateStudentsList(l)}} />
+                                                        <input placeholder="Cls" className="w-12 p-2 border rounded-lg text-sm" value={s.studentClass} onChange={e => {const l=[...createStudentsList]; l[i].studentClass=e.target.value; setCreateStudentsList(l)}} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <button className="w-full py-3.5 bg-teal-600 text-white rounded-xl font-bold shadow-lg shadow-teal-200">Create Account</button>
+                                        </form>
+                                    </div>
+                                )}
+
+                                {view === 'details' && selectedFamily && (
+                                    <div className="space-y-6 animate-in slide-in-from-right-4">
+                                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div><h2 className="text-xl font-bold text-slate-800">{selectedFamily.guardianName}</h2><span className="text-xs text-slate-400 font-mono">#{selectedFamily.familyRegNo}</span></div>
+                                                <div className="flex gap-2"><button onClick={()=>setEditFamilyMode(!editFamilyMode)} className="p-2 bg-blue-50 text-blue-500 rounded-lg"><Edit2 size={16}/></button><button onClick={handleDeleteFamily} className="p-2 bg-red-50 text-red-500 rounded-lg"><Trash2 size={16}/></button></div>
+                                            </div>
+                                            {!editFamilyMode ? (
+                                                <div className="flex flex-col gap-2 bg-slate-50 p-3 rounded-xl mb-4">
+                                                    {selectedFamily.students?.map(s => <div key={s.id} className="text-sm font-bold text-slate-600 flex justify-between"><span>{s.studentName}</span> <span className="text-xs bg-white px-2 rounded border">Cls {s.studentClass}</span></div>)}
+                                                    <div className="border-t border-slate-200 pt-2 mt-1"><form onSubmit={handleAddStudent} className="flex gap-2"><input name="sName" placeholder="New Child" className="flex-1 p-1.5 text-xs border rounded" required /><input name="sClass" placeholder="Cls" className="w-12 p-1.5 text-xs border rounded" required /><button className="bg-slate-800 text-white px-3 rounded text-xs font-bold">Add</button></form></div>
+                                                </div>
+                                            ) : (
+                                                <form onSubmit={handleUpdateFamily} className="mb-4 space-y-2 bg-slate-50 p-3 rounded-xl"><input name="gName" defaultValue={selectedFamily.guardianName} className="w-full p-2 border rounded text-sm" /><div className="flex gap-2"><input name="cNo" defaultValue={selectedFamily.familyRegNo} className="w-1/2 p-2 border rounded text-sm" /><input name="phone" defaultValue={selectedFamily.phone} className="w-1/2 p-2 border rounded text-sm" /></div><div className="pt-2"><label className="text-[10px] font-bold text-red-500 uppercase">Pending Due</label><input name="pBal" type="number" defaultValue={selectedFamily.pendingBalance} className="w-full p-2 border border-red-200 rounded text-sm font-bold text-red-600" /></div><button className="w-full bg-blue-600 text-white py-2 rounded text-xs font-bold">Save Changes</button></form>
+                                            )}
+                                            <button onClick={()=>{setEditingPayment(null); setShowPaymentModal(true)}} className="w-full py-3 bg-teal-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"><CreditCard size={18}/> Pay Now</button>
+                                            <div className="mt-6"><h4 className="text-xs font-bold text-slate-400 uppercase mb-3">History</h4><div className="space-y-2">{selectedFamily.payments?.slice().reverse().map((p, i) => <div key={i} className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm"><div><p className="font-bold text-sm text-slate-700">₹{p.amount}</p><p className="text-xs text-slate-400">{p.month} • {p.date}</p></div><div className="flex gap-2"><button onClick={() => { setCurrentReceipt({...p, studentNames:(selectedFamily.students?.map(s=>s.studentName).join(', ')||'N/A'), guardianName:selectedFamily.guardianName, familyRegNo:selectedFamily.familyRegNo, pendingBalance:selectedFamily.pendingBalance, month:p.month});setShowReceipt(true);}} className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Printer size={16}/></button><button onClick={() => openEditPayment(p)} className="p-2 bg-slate-100 text-slate-600 rounded-lg"><Edit2 size={16}/></button></div></div>)}</div></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </main>
 
