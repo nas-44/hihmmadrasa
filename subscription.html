@@ -1,19 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Varisanghya - HIHSM</title>
-
+    
     <!-- Design System -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
-        rel="stylesheet">
-
-    <!-- HTML2Canvas for Image Download -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- HTML2Canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- React & Firebase -->
@@ -32,133 +29,42 @@
     </script>
 
     <style>
-        :root {
-            --primary: #2dd4bf;
-            --secondary: #f472b6;
-            --dark: #334155;
-            --bg: #f0f9ff;
-        }
+        :root { --primary: #0f766e; --bg: #f8fafc; }
+        body { font-family: 'Quicksand', sans-serif; background-color: var(--bg); color: #334155; overscroll-behavior-y: none; }
+        h1, h2, h3, h4, .brand-font { font-family: 'Fredoka', sans-serif; }
+        .serif-font { font-family: 'Playfair Display', serif; }
+        
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        body {
-            font-family: 'Quicksand', sans-serif;
-            background-color: var(--bg);
-            color: var(--dark);
+        @media (max-width: 768px) {
+            .mobile-card { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; border-radius: 1rem; }
         }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        .brand-font {
-            font-family: 'Fredoka', sans-serif;
-        }
-
-        .serif-font {
-            font-family: 'Playfair Display', serif;
-        }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-        }
-
-        .nav-active {
-            background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
-            color: white;
-            box-shadow: 0 10px 20px -5px rgba(45, 212, 191, 0.4);
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-
         @media print {
-            .no-print {
-                display: none !important;
-            }
-
-            body {
-                background: white;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
+            .no-print { display: none !important; }
+            body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
-
-        /* Error Overlay */
-        #debug-error {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            color: #dc2626;
-            z-index: 9999;
-            padding: 2rem;
-            overflow: auto;
-            font-family: monospace;
-            text-align: center;
-        }
+        #debug-error { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; color: #dc2626; z-index: 9999; padding: 2rem; text-align: center; }
     </style>
 </head>
-
-<body>
-    <!-- Fallback / Loading State -->
-    <div id="root" class="min-h-screen flex flex-col items-center justify-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 mb-4"></div>
-        <h2 class="text-xl font-bold text-slate-600">Loading Varisanghya...</h2>
-        <p class="text-sm text-slate-400 mt-2">If this takes longer than 5 seconds, check your connection.</p>
+<body class="antialiased">
+    <div id="root" class="min-h-[100dvh] flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mb-4"></div>
+        <h2 class="text-xl font-bold text-slate-600">Loading App...</h2>
     </div>
 
-    <!-- Error Container -->
-    <div id="debug-error">
-        <div class="max-w-xl mx-auto mt-20">
-            <h2 class="text-3xl font-bold mb-4">Something went wrong</h2>
-            <p class="mb-4 text-slate-600">Please check the console for details or report this error.</p>
-            <div id="error-text" class="bg-red-50 p-4 rounded border border-red-200 text-left mb-6 whitespace-pre-wrap">
-            </div>
-            <button onclick="window.location.reload()"
-                class="px-6 py-3 bg-teal-600 text-white rounded-full font-bold hover:bg-teal-700 transition">Reload
-                Page</button>
-        </div>
-    </div>
-
-    <script>
-        // Catch Global Errors to prevent blank screen
-        window.onerror = function (message, source, lineno, colno, error) {
-            document.getElementById('root').style.display = 'none';
-            document.getElementById('debug-error').style.display = 'block';
-            document.getElementById('error-text').textContent = `Error: ${message}\nLine: ${lineno}`;
-            console.error(error);
-        };
-    </script>
+    <div id="debug-error"><h2 class="text-2xl font-bold">Error</h2><p id="error-text"></p><button onclick="location.reload()" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded">Reload</button></div>
+    <script>window.onerror = function(m,s,l){ document.getElementById('root').style.display='none'; document.getElementById('debug-error').style.display='block'; document.getElementById('error-text').innerText=`${m} (Line ${l})`; console.error(m); };</script>
 
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
         import { initializeApp } from 'firebase/app';
-        import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, where, getDocs } from 'firebase/firestore';
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, where, getDocs, initializeFirestore } from 'firebase/firestore';
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-        import { Search, Plus, User, Users, Printer, CreditCard, X, Trash2, ChevronRight, LayoutGrid, Hash, UserPlus, Download, Upload, TrendingUp, TrendingDown, IndianRupee, Activity, Edit2, MinusCircle, Cloud, AlertTriangle, Save, Home, FileText, Calendar, Wallet, History, MessageCircle, Share2, ImageDown, PieChart, FileSpreadsheet } from 'lucide-react';
+        import { Search, Plus, User, Users, Printer, CreditCard, X, Trash2, ChevronRight, LayoutGrid, Hash, UserPlus, Download, Upload, TrendingUp, TrendingDown, IndianRupee, Activity, Edit2, MinusCircle, Cloud, AlertTriangle, Save, Home, FileText, Calendar, Wallet, History, MessageCircle, Share2, ImageDown, PieChart, FileSpreadsheet, Menu, ArrowLeft, Bell } from 'lucide-react';
 
-        // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyARMtUmA4fxEr4jwHpcMxMXNGifKLKzfn0",
             authDomain: "varismnkya.firebaseapp.com",
@@ -168,21 +74,16 @@
             appId: "1:211429098532:web:0ca29381411512c17f44b1"
         };
 
-        // Initialize Firebase
         let app, auth, db;
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-        } catch (error) {
-            console.error("Firebase Init Error:", error);
-            throw new Error("Firebase Initialization Failed: " + error.message);
-        }
+        try { 
+            app = initializeApp(firebaseConfig); 
+            auth = getAuth(app); 
+            db = initializeFirestore(app, { experimentalForceLongPolling: true });
+        } catch (e) { console.error(e); }
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
-        const CLASS_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
+        const CLASS_OPTIONS = Array.from({length: 12}, (_, i) => i + 1);
 
-        // --- MAIN APP COMPONENT ---
         function VarisanghyaApp() {
             const [user, setUser] = useState(null);
             const [families, setFamilies] = useState([]);
@@ -191,1012 +92,191 @@
             const [importLoading, setImportLoading] = useState(false);
             const [view, setView] = useState('dashboard');
             const [selectedFamily, setSelectedFamily] = useState(null);
-
-            // For Payment Receipt
+            
             const [showReceipt, setShowReceipt] = useState(false);
             const [currentReceipt, setCurrentReceipt] = useState(null);
             const [searchTerm, setSearchTerm] = useState('');
             const [errorMsg, setErrorMsg] = useState(null);
-
-            // Edit States
             const [editFamilyMode, setEditFamilyMode] = useState(false);
             const [editingStudentId, setEditingStudentId] = useState(null);
-            const [createStudentsList, setCreateStudentsList] = useState([
-                { id: 'init', studentName: '', regNo: '', year: new Date().getFullYear(), studentClass: '' }
-            ]);
-
-            // Dashboard & Expense States
-            const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
+            const [createStudentsList, setCreateStudentsList] = useState([{ id: 'init', studentName: '', regNo: '', year: new Date().getFullYear(), studentClass: '' }]);
+            
+            // Dashboard & Filters
+            const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
+            const [dashboardMode, setDashboardMode] = useState('month'); 
+            const [homeFilter, setHomeFilter] = useState('all'); 
+            
             const [showExpenseModal, setShowExpenseModal] = useState(false);
-
+            const [showPaymentModal, setShowPaymentModal] = useState(false); 
+            const [editingPayment, setEditingPayment] = useState(null);
+            
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const [madrsaName, setMadrsaName] = useState('HIHSM');
             const fileInputRef = useRef(null);
 
-            // --- CUSTOM MADRSA NAME STATE ---
-            const [madrsaName, setMadrsaName] = useState('HIHSM');
-
             useEffect(() => {
-                // Fetch Madrsa Name from Admin LocalStorage
                 const localData = localStorage.getItem('hihsm_data_ultimate');
-                if (localData) {
-                    try {
-                        const parsed = JSON.parse(localData);
-                        if (parsed.settings && parsed.settings.name) {
-                            setMadrsaName(parsed.settings.name);
-                        }
-                    } catch (e) { console.error("Error parsing admin settings", e); }
-                }
-
+                if (localData) { try { const p = JSON.parse(localData); if (p.settings?.name) setMadrsaName(p.settings.name); } catch(e){} }
                 if (!auth) return;
-                const unsubAuth = onAuthStateChanged(auth, u => {
-                    setUser(u);
-                    if (!u) {
-                        signInAnonymously(auth).catch(e => {
-                            console.error(e);
-                            setErrorMsg("Auth Error: " + e.message + ". Check Firebase Console Authorized Domains.");
-                            setLoading(false);
-                        });
-                    }
-                });
-                return () => unsubAuth();
+                const unsub = onAuthStateChanged(auth, u => { setUser(u); if (!u) signInAnonymously(auth).catch(e => { setErrorMsg(e.message); setLoading(false); }); });
+                return () => unsub();
             }, []);
 
             useEffect(() => {
                 if (!user || !db) return;
                 try {
-                    // Families Sync
-                    const unsubFam = onSnapshot(collection(db, 'families'),
-                        (snap) => {
-                            setFamilies(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                            setLoading(false);
-                        },
-                        (err) => {
-                            console.error(err);
-                            setErrorMsg("Sync Error: " + err.message);
-                            setLoading(false);
-                        }
-                    );
-
-                    // Expenses Sync
-                    const unsubExp = onSnapshot(collection(db, 'expenses'),
-                        (snap) => {
-                            setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                        },
-                        (err) => console.error("Expense Sync Error", err)
-                    );
-
-                    return () => { unsubFam(); unsubExp(); };
-                } catch (e) {
-                    setErrorMsg("DB Init Error: " + e.message);
-                    setLoading(false);
-                }
+                    const uF = onSnapshot(collection(db, 'families'), s => { setFamilies(s.docs.map(d => ({id:d.id,...d.data()}))); setLoading(false); }, err => { setErrorMsg("Connection lost. Retrying..."); setLoading(false); });
+                    const uE = onSnapshot(collection(db, 'expenses'), s => { setExpenses(s.docs.map(d => ({id:d.id,...d.data()}))); });
+                    return () => { uF(); uE(); };
+                } catch (e) { setErrorMsg(e.message); setLoading(false); }
             }, [user]);
 
-            // --- STATS & FILTERS ---
+            // Stats
             const stats = useMemo(() => {
-                let fams = families.length;
-                let studs = 0;
-                let rev = 0;
-                let pendingTotal = 0;
-                let recent = [];
-                let expTotal = 0;
-
-                // Process Income
+                let fams=families.length, studs=0, rev=0, pend=0, rec=[], exp=0;
                 families.forEach(f => {
                     if (f.students) studs += f.students.length;
-                    if (f.pendingBalance) pendingTotal += Number(f.pendingBalance) || 0;
-
-                    if (f.payments) {
-                        f.payments.forEach(p => {
-                            rev += Number(p.amount) || 0;
-                            recent.push({
-                                ...p,
-                                type: 'income',
-                                familyName: f.guardianName,
-                                cardNo: f.familyRegNo,
-                                studentName: 'Family Account',
-                                phone: f.phone
-                            });
-                        });
-                    }
+                    if (f.pendingBalance) pend += Number(f.pendingBalance) || 0;
+                    if (f.payments) f.payments.forEach(p => { 
+                        if (!p.date) return;
+                        if (dashboardMode === 'month' && !p.date.startsWith(reportMonth)) return;
+                        rev += Number(p.amount)||0; 
+                        rec.push({...p, type:'income', familyName:f.guardianName, cardNo:f.familyRegNo, studentName:'Family', phone:f.phone}); 
+                    });
                 });
-
-                // Process Expenses
                 expenses.forEach(e => {
-                    expTotal += Number(e.amount) || 0;
+                    if (!e.date) return;
+                    if (dashboardMode === 'month' && !e.date.startsWith(reportMonth)) return;
+                    exp += Number(e.amount)||0;
                 });
-
-                // Calculate Net
-                const netBalance = rev - expTotal;
-
-                return {
-                    fams,
-                    studs,
-                    rev,
-                    expTotal,
-                    netBalance,
-                    pendingTotal,
-                    recent: recent.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5)
-                };
-            }, [families, expenses]);
+                return { fams, studs, rev, expTotal: exp, netBalance: rev-exp, pendingTotal: pend, recent: rec.sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,5) };
+            }, [families, expenses, dashboardMode, reportMonth]);
 
             const monthlyStats = useMemo(() => {
-                if (!reportMonth) return { income: 0, expense: 0, net: 0, transactions: [] };
-
-                let mIncome = 0;
-                let mExpense = 0;
-                let mTrans = [];
-
-                // Filter Income
-                families.forEach(f => {
-                    if (f.payments) {
-                        f.payments.forEach(p => {
-                            if (p.date.startsWith(reportMonth)) {
-                                mIncome += Number(p.amount) || 0;
-                                mTrans.push({
-                                    date: p.date,
-                                    type: 'Income',
-                                    desc: `Payment: ${f.guardianName} (${f.familyRegNo})`,
-                                    amount: p.amount,
-                                    isExpense: false
-                                });
-                            }
-                        });
-                    }
+                let inc=0, exp=0, trs=[];
+                families.forEach(f => f.payments?.forEach(p => { 
+                    if(p.date && p.date.startsWith(reportMonth)) { 
+                        inc+=Number(p.amount)||0; 
+                        trs.push({id: p.id, date:p.date, desc:`${f.guardianName} (#${f.familyRegNo})`, type:'Income', amount:p.amount, isExpense:false}); 
+                    } 
+                }));
+                expenses.forEach(e => { 
+                    if(e.date && e.date.startsWith(reportMonth)) { 
+                        exp+=Number(e.amount)||0; 
+                        trs.push({id:e.id, date:e.date, desc:e.description, type:'Expense', amount:e.amount, isExpense:true}); 
+                    } 
                 });
-
-                // Filter Expenses
-                expenses.forEach(e => {
-                    if (e.date.startsWith(reportMonth)) {
-                        mExpense += Number(e.amount) || 0;
-                        mTrans.push({
-                            id: e.id,
-                            date: e.date,
-                            type: 'Expense',
-                            desc: e.description,
-                            amount: e.amount,
-                            isExpense: true
-                        });
-                    }
-                });
-
-                // Sort by date
-                mTrans.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                return {
-                    income: mIncome,
-                    expense: mExpense,
-                    net: mIncome - mExpense,
-                    transactions: mTrans
-                };
-
+                return { income: inc, expense: exp, net: inc-exp, transactions: trs.sort((a,b) => new Date(b.date)-new Date(a.date)) };
             }, [families, expenses, reportMonth]);
 
             const filteredFamilies = useMemo(() => {
-                let data = families;
+                let d = families;
+                if (homeFilter === 'due') { d = d.filter(f => Number(f.pendingBalance) > 0); }
+                if (searchTerm) { const q = searchTerm.toLowerCase(); d = d.filter(f => f.guardianName?.toLowerCase().includes(q) || f.familyRegNo?.toString().includes(q) || f.students?.some(s => s.studentName.toLowerCase().includes(q))); }
+                return [...d].sort((a,b) => (a.familyRegNo?.toString()||'').localeCompare(b.familyRegNo?.toString()||'', undefined, {numeric:true, sensitivity:'base'}));
+            }, [families, searchTerm, homeFilter]);
 
-                // 1. Filter
-                if (searchTerm) {
-                    const q = searchTerm.toLowerCase();
-                    data = data.filter(f =>
-                        f.guardianName?.toLowerCase().includes(q) ||
-                        f.familyRegNo?.toString().toLowerCase().includes(q) ||
-                        f.students?.some(s => s.studentName.toLowerCase().includes(q))
-                    );
-                }
+            // Handlers
+            const handlePayment = async (e) => { 
+                e.preventDefault(); const fd=new FormData(e.target); const amt=Number(fd.get('amt')); 
+                let updatedPayments = [...(selectedFamily.payments||[])];
+                let currentPending = Number(selectedFamily.pendingBalance) || 0;
 
-                // 2. Sort (Natural Sort by Card No)
-                return [...data].sort((a, b) => {
-                    const idA = a.familyRegNo?.toString() || '';
-                    const idB = b.familyRegNo?.toString() || '';
-                    return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
-                });
-            }, [families, searchTerm]);
-
-            // --- EXPORT/IMPORT ---
-            const handleExport = () => {
-                let csv = "FamilyCardNo,GuardianName,Phone,PendingBalance,StudentName,StudentClass,StudentRegNo,Year\n";
-                families.forEach(f => {
-                    const p = `${f.familyRegNo},${f.guardianName},${f.phone || ''},${f.pendingBalance || 0}`;
-                    if (!f.students?.length) csv += `${p},,,,\n`;
-                    else f.students.forEach(s => csv += `${p},${s.studentName},${s.studentClass || ''},${s.regNo || ''},${s.year || ''}\n`);
-                });
-                const link = document.createElement("a");
-                link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
-                link.download = "varisanghya_data.csv";
-                link.click();
-            };
-
-            const handleDownloadReport = (type) => {
-                let csv = "Date,Type,Description,Amount\n";
-                let dataToExport = [];
-
-                if (type === 'monthly') {
-                    dataToExport = monthlyStats.transactions;
+                if (editingPayment) {
+                    currentPending += Number(editingPayment.amount); 
+                    updatedPayments = updatedPayments.map(p => p.id === editingPayment.id ? { ...p, amount: amt, month: fd.get('mon'), receiptNo: fd.get('rec'), date: fd.get('date') } : p);
                 } else {
-                    families.forEach(f => {
-                        if (f.payments) f.payments.forEach(p => dataToExport.push({
-                            date: p.date, type: 'Income', desc: `Payment: ${f.guardianName}`, amount: p.amount
-                        }));
-                    });
-                    expenses.forEach(e => {
-                        dataToExport.push({
-                            date: e.date, type: 'Expense', desc: e.description, amount: e.amount
-                        });
-                    });
-                    dataToExport.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    const pay={id:generateId(), amount:amt, month:fd.get('mon'), receiptNo:fd.get('rec'), date:fd.get('date')};
+                    updatedPayments.push(pay);
                 }
-
-                dataToExport.forEach(row => {
-                    csv += `${row.date},${row.type},"${row.desc}",${row.amount}\n`;
-                });
-
-                const link = document.createElement("a");
-                link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
-                link.download = `financial_report_${type}.csv`;
-                link.click();
-            };
-
-            const handleTemplateDownload = () => {
-                let csv = "FamilyCardNo,GuardianName,Phone,PendingBalance,StudentName,StudentClass,StudentRegNo,Year\n";
-                csv += "1001,John Doe,9876543210,500,Alice Doe,5,ADM001,2024\n";
-                const link = document.createElement("a");
-                link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
-                link.download = "import_template.csv";
-                link.click();
-            }
-            const handleImport = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async (event) => { await processImport(event.target.result); e.target.value = ''; };
-                reader.readAsText(file);
-            };
-            const processImport = async (csv) => {
-                setImportLoading(true);
-                try {
-                    const lines = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-                    if (lines.length < 2) throw new Error("File is empty");
-                    const map = new Map();
-                    lines.slice(1).forEach(line => {
-                        if (!line.trim()) return;
-                        const cols = line.split(',');
-                        if (cols.length < 2) return;
-                        const card = cols[0]?.trim(); const guard = cols[1]?.trim(); const phone = cols[2]?.trim(); const pending = cols[3]?.trim(); const sName = cols[4]?.trim(); const sClass = cols[5]?.trim(); const sReg = cols[6]?.trim(); const sYear = cols[7]?.trim();
-                        if (!card || !guard) return;
-                        if (!map.has(card)) map.set(card, { familyRegNo: card, guardianName: guard, phone: phone || '', pendingBalance: pending || 0, students: [], payments: [] });
-                        if (sName) map.get(card).students.push({ id: generateId(), studentName: sName, studentClass: sClass || '', regNo: sReg || '', year: sYear || new Date().getFullYear().toString() });
-                    });
-                    if (map.size === 0) { alert("No data."); setImportLoading(false); return; }
-                    if (!confirm(`Import ${map.size} families?`)) { setImportLoading(false); return; }
-                    let added = 0, updated = 0;
-                    for (const data of map.values()) {
-                        const q = query(collection(db, 'families'), where('familyRegNo', '==', data.familyRegNo));
-                        const snap = await getDocs(q);
-                        if (!snap.empty) {
-                            const docRef = doc(db, 'families', snap.docs[0].id);
-                            const existing = snap.docs[0].data().students || [];
-                            const newSt = data.students.filter(n => !existing.some(e => e.studentName.toLowerCase() === n.studentName.toLowerCase()));
-                            let updatePayload = {};
-                            if (data.pendingBalance) updatePayload.pendingBalance = data.pendingBalance;
-                            if (newSt.length > 0) updatePayload.students = [...existing, ...newSt];
-                            if (Object.keys(updatePayload).length > 0) { await updateDoc(docRef, updatePayload); updated++; }
-                        } else { await addDoc(collection(db, 'families'), { ...data, createdAt: serverTimestamp() }); added++; }
-                    }
-                    alert(`Imported: ${added} New, ${updated} Updated`);
-                } catch (err) { console.error(err); alert("Import Failed"); }
-                setImportLoading(false);
-            };
-
-            // --- EXPENSE HANDLERS ---
-            const handleAddExpense = async (e) => {
-                e.preventDefault();
-                const fd = new FormData(e.target);
-                try {
-                    await addDoc(collection(db, 'expenses'), {
-                        description: fd.get('desc'),
-                        amount: fd.get('amount'),
-                        date: fd.get('date'),
-                        category: fd.get('cat'),
-                        createdAt: serverTimestamp()
-                    });
-                    setShowExpenseModal(false);
-                } catch (e) { alert("Error adding expense"); }
-            };
-
-            const handleDeleteExpense = async (id) => {
-                if (confirm("Delete this expense record?")) {
-                    await deleteDoc(doc(db, 'expenses', id));
-                }
-            };
-
-            // --- CRUD HANDLERS (Families) ---
-            const handleCreateFamily = async (e) => {
-                e.preventDefault();
-                const fd = new FormData(e.target);
-                const students = createStudentsList.filter(s => s.studentName.trim()).map(s => ({
-                    id: generateId(), studentName: s.studentName, regNo: s.regNo || '', year: s.year || '', studentClass: s.studentClass || ''
-                }));
-                try {
-                    await addDoc(collection(db, 'families'), {
-                        guardianName: fd.get('guardianName'), familyRegNo: fd.get('familyRegNo'), phone: fd.get('phone'), pendingBalance: fd.get('pendingBalance') || 0, students, payments: [], createdAt: serverTimestamp()
-                    });
-                    setView('home'); setCreateStudentsList([{ id: 'init', studentName: '', regNo: '', year: new Date().getFullYear(), studentClass: '' }]);
-                } catch (e) { alert("Error: " + e.message); }
-            };
-
-            const handleUpdateFamily = async (e) => {
-                e.preventDefault();
-                const fd = new FormData(e.target);
-                try {
-                    const updateData = { guardianName: fd.get('gName'), familyRegNo: fd.get('cNo'), phone: fd.get('phone'), pendingBalance: fd.get('pBal') };
-                    await updateDoc(doc(db, 'families', selectedFamily.id), updateData);
-                    setEditFamilyMode(false); setSelectedFamily({ ...selectedFamily, ...updateData });
-                } catch (e) { alert("Update failed"); }
-            };
-
-            const handleAddStudent = async (e) => {
-                e.preventDefault();
-                const fd = new FormData(e.target);
-                const newS = { id: generateId(), studentName: fd.get('sName'), regNo: fd.get('sReg'), year: fd.get('sYear'), studentClass: fd.get('sClass') };
-                const updated = [...(selectedFamily.students || []), newS];
-                await updateDoc(doc(db, 'families', selectedFamily.id), { students: updated });
-                setSelectedFamily({ ...selectedFamily, students: updated }); e.target.reset();
-            };
-
-            const handleEditStudent = async (e) => {
-                e.preventDefault();
-                const fd = new FormData(e.target);
-                const updated = selectedFamily.students.map(s => s.id === editingStudentId ? { ...s, studentName: fd.get('sName'), regNo: fd.get('sReg'), year: fd.get('sYear'), studentClass: fd.get('sClass') } : s);
-                await updateDoc(doc(db, 'families', selectedFamily.id), { students: updated });
-                setSelectedFamily({ ...selectedFamily, students: updated }); setEditingStudentId(null);
-            };
-
-            const handleDeleteStudent = async (sid) => {
-                if (!confirm("Delete?")) return;
-                const updated = selectedFamily.students.filter(s => s.id !== sid);
-                await updateDoc(doc(db, 'families', selectedFamily.id), { students: updated });
-                setSelectedFamily({ ...selectedFamily, students: updated });
-            };
-
-            const handlePayment = async (e) => {
-                e.preventDefault();
-                const fd = new FormData(e.target);
-                const amountPaid = Number(fd.get('amt'));
-
-                const pay = {
-                    id: generateId(),
-                    amount: amountPaid,
-                    month: fd.get('mon'),
-                    receiptNo: fd.get('rec'),
-                    date: fd.get('date')
-                };
-
-                const currentPayments = selectedFamily.payments || [];
-                const updatedPayments = [...currentPayments, pay];
-
-                // Deduct from Pending Balance
-                const currentPending = Number(selectedFamily.pendingBalance) || 0;
-                const newPending = Math.max(0, currentPending - amountPaid);
-
-                // Get all student names
-                const allStudents = selectedFamily.students?.map(s => s.studentName).join(', ') || 'N/A';
-
-                await updateDoc(doc(db, 'families', selectedFamily.id), {
-                    payments: updatedPayments,
-                    pendingBalance: newPending
-                });
-
-                const updatedFamily = { ...selectedFamily, payments: updatedPayments, pendingBalance: newPending };
+                const newPending = Math.max(0, currentPending - amt);
+                const allStu=selectedFamily.students?.map(s=>s.studentName).join(', ')||'N/A';
+                await updateDoc(doc(db,'families',selectedFamily.id),{payments:updatedPayments, pendingBalance:newPending});
+                const updatedFamily = {...selectedFamily, payments:updatedPayments, pendingBalance:newPending};
                 setSelectedFamily(updatedFamily);
-
-                setCurrentReceipt({
-                    ...pay,
-                    studentNames: allStudents,
-                    guardianName: selectedFamily.guardianName,
-                    familyRegNo: selectedFamily.familyRegNo,
-                    pendingBalance: newPending
-                });
-                setShowReceipt(true);
-                e.target.reset();
+                if (!editingPayment) {
+                    setCurrentReceipt({amount:amt, month:fd.get('mon'), receiptNo:fd.get('rec'), date:fd.get('date'), studentNames:allStu, guardianName:selectedFamily.guardianName, familyRegNo:selectedFamily.familyRegNo, pendingBalance:newPending});
+                    setShowReceipt(true);
+                } else { alert("Payment Updated!"); }
+                setShowPaymentModal(false); setEditingPayment(null);
             };
 
-            const handleDeletePayment = async (pid) => {
-                if (!confirm("Delete?")) return;
-                const updated = (selectedFamily.payments || []).filter(p => p.id !== pid);
-                await updateDoc(doc(db, 'families', selectedFamily.id), { payments: updated });
-                setSelectedFamily({ ...selectedFamily, payments: updated });
+            const openEditPayment = (pay) => { setEditingPayment(pay); setShowPaymentModal(true); };
+            const handleDeletePayment = async (pid) => { 
+                if(!confirm("Delete this receipt? Balance will be adjusted.")) return;
+                const payToDelete = selectedFamily.payments.find(p => p.id === pid);
+                if(!payToDelete) return;
+                const updated = (selectedFamily.payments||[]).filter(p=>p.id!==pid);
+                const newPending = (Number(selectedFamily.pendingBalance)||0) + Number(payToDelete.amount);
+                await updateDoc(doc(db,'families',selectedFamily.id),{payments:updated, pendingBalance: newPending}); 
+                setSelectedFamily({...selectedFamily, payments:updated, pendingBalance: newPending}); 
             };
+            
+            // CRUD
+            const handleCreateFamily = async (e) => { e.preventDefault(); const fd=new FormData(e.target); const s=createStudentsList.filter(x=>x.studentName); await addDoc(collection(db,'families'),{guardianName:fd.get('guardianName'), familyRegNo:fd.get('familyRegNo'), phone:fd.get('phone'), pendingBalance:fd.get('pendingBalance'), students:s, payments:[], createdAt:serverTimestamp()}); setView('home'); setCreateStudentsList([{id:'init',studentName:'',regNo:'',year:new Date().getFullYear(),studentClass:''}]); };
+            const handleUpdateFamily = async (e) => { e.preventDefault(); const fd=new FormData(e.target); const u={guardianName:fd.get('gName'), familyRegNo:fd.get('cNo'), phone:fd.get('phone'), pendingBalance:fd.get('pBal')}; await updateDoc(doc(db,'families',selectedFamily.id),u); setEditFamilyMode(false); setSelectedFamily({...selectedFamily,...u}); };
+            const handleAddStudent = async (e) => { e.preventDefault(); const fd=new FormData(e.target); const n={id:generateId(), studentName:fd.get('sName'), regNo:fd.get('sReg'), year:fd.get('sYear'), studentClass:fd.get('sClass')}; const u=[...(selectedFamily.students||[]),n]; await updateDoc(doc(db,'families',selectedFamily.id),{students:u}); setSelectedFamily({...selectedFamily,students:u}); e.target.reset(); };
+            const handleEditStudent = async (e) => { e.preventDefault(); const fd=new FormData(e.target); const u=selectedFamily.students.map(s=>s.id===editingStudentId?{...s, studentName:fd.get('sName'), regNo:fd.get('sReg'), year:fd.get('sYear'), studentClass:fd.get('sClass')}:s); await updateDoc(doc(db,'families',selectedFamily.id),{students:u}); setSelectedFamily({...selectedFamily,students:u}); setEditingStudentId(null); };
+            const handleDeleteStudent = async (sid) => { if(confirm("Delete?")) { const u=selectedFamily.students.filter(s=>s.id!==sid); await updateDoc(doc(db,'families',selectedFamily.id),{students:u}); setSelectedFamily({...selectedFamily,students:u}); } };
+            const handleDeleteFamily = async () => { if(confirm("Delete Account?")) { await deleteDoc(doc(db,'families',selectedFamily.id)); setView('home'); setSelectedFamily(null); } };
+            const handleAddExpense = async (e) => { e.preventDefault(); const fd=new FormData(e.target); await addDoc(collection(db,'expenses'),{description:fd.get('desc'),amount:fd.get('amount'),date:fd.get('date'),category:fd.get('cat'),createdAt:serverTimestamp()}); setShowExpenseModal(false); };
+            const handleDeleteExpense = async (id) => { if(confirm("Delete?")) await deleteDoc(doc(db,'expenses',id)); };
 
-            const handleDeleteFamily = async () => {
-                if (confirm("Delete entire account?")) { await deleteDoc(doc(db, 'families', selectedFamily.id)); setView('home'); setSelectedFamily(null); }
+            const handleWhatsAppReminder = (f) => {
+                const msg = `*Assalamu Alaikum*\nDear Parent (${f.guardianName}),\n\nThis is a gentle reminder regarding the pending Varisanghya balance.\n*Due Amount: ₹${f.pendingBalance}*\n\nPlease pay at your earliest convenience.\n\n-${madrsaName}`;
+                const clean = f.phone ? f.phone.replace(/\D/g, '') : '';
+                const url = clean.length>=10 ? `https://wa.me/${clean.length===10?'91'+clean:clean}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
             };
-
-            const handleWhatsAppShare = async (receipt, phone) => {
-                const element = document.getElementById('receipt-print');
-                if (!element) return;
-
-                // 1. Prepare formatted message with ALL students and Madrsa Name
-                const message = `*${madrsaName} Receipt*\n` +
-                    `----------------------------\n` +
-                    `Receipt No: ${receipt.receiptNo}\n` +
-                    `Date: ${receipt.date}\n` +
-                    `Students: ${receipt.studentNames}\n` +
-                    `Family ID: ${receipt.familyRegNo}\n` +
-                    `Amount: ₹${receipt.amount}\n` +
-                    `----------------------------\n` +
-                    `Thank you!`;
-
-                // 2. Prepare WhatsApp URL (Text fallback)
-                const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
-                const waBase = (cleanPhone.length >= 10)
-                    ? `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}`
-                    : `https://wa.me/`;
-                const textUrl = `${waBase}?text=${encodeURIComponent(message)}`;
-
+            const handleWhatsAppShare = async (r, ph) => {
+                const el = document.getElementById('receipt-print'); if(!el) return;
+                const msg = `*${madrsaName} Receipt*\nRcpt: ${r.receiptNo}\nDate: ${r.date}\nStudents: ${r.studentNames}\nAmt: ₹${r.amount}\nThank you!`;
+                const clean = ph ? ph.replace(/\D/g, '') : '';
+                const url = clean.length>=10 ? `https://wa.me/${clean.length===10?'91'+clean:clean}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
                 try {
-                    // 3. Generate Image
-                    const canvas = await window.html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
-
+                    const canvas = await window.html2canvas(el, {scale:2, backgroundColor:'#fff', width: el.offsetWidth, height: el.offsetHeight});
                     canvas.toBlob(async (blob) => {
-                        if (!blob) {
-                            window.open(textUrl, '_blank');
-                            return;
-                        }
-
-                        const file = new File([blob], `Receipt_${receipt.receiptNo}.png`, { type: 'image/png' });
-
-                        // 4. Check if Native Sharing is supported (Mobile)
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            try {
-                                await navigator.share({
-                                    files: [file],
-                                    title: 'Payment Receipt',
-                                    text: message
-                                });
-                            } catch (error) {
-                                if (error.name !== 'AbortError') window.open(textUrl, '_blank');
-                            }
-                        } else {
-                            // 5. Desktop Fallback
-                            const link = document.createElement('a');
-                            link.download = `Receipt_${receipt.receiptNo}.png`;
-                            link.href = canvas.toDataURL('image/png');
-                            link.click();
-
-                            setTimeout(() => {
-                                window.open(textUrl, '_blank');
-                            }, 500);
-                        }
+                        if(!blob){ window.open(url, '_blank'); return; }
+                        const f = new File([blob], `Receipt.png`, {type:'image/png'});
+                        if(navigator.canShare && navigator.canShare({files:[f]})) { try { await navigator.share({files:[f], title:'Receipt', text:msg}); } catch(e){ if(e.name!=='AbortError') window.open(url, '_blank'); } } else { const l = document.createElement('a'); l.download = `Receipt.png`; l.href = canvas.toDataURL('image/png'); l.click(); setTimeout(() => window.open(url, '_blank'), 500); }
                     }, 'image/png');
-                } catch (e) {
-                    console.error("Image generation failed", e);
-                    window.open(textUrl, '_blank');
-                }
+                } catch(e) { window.open(url, '_blank'); }
             };
+            const handleDownloadImage = async () => { const el=document.getElementById('receipt-print'); if(el){ const c=await html2canvas(el,{scale:2,backgroundColor:'#fff'}); const l=document.createElement('a'); l.download='Receipt.png'; l.href=c.toDataURL('image/png'); l.click(); } };
+            
+            const handleExport = () => { let c="Card,Name,Phone,Pending,Student,Class,Reg\n"; families.forEach(f=>{ const p=`${f.familyRegNo},${f.guardianName},${f.phone||''},${f.pendingBalance||0}`; if(!f.students?.length) c+=`${p},,,\n`; else f.students.forEach(s=>c+=`${p},${s.studentName},${s.studentClass},${s.regNo}\n`); }); const l=document.createElement('a'); l.href="data:text/csv;charset=utf-8,"+encodeURI(c); l.download="data.csv"; l.click(); };
+            const handleDownloadReport = (t) => { let c="Date,Type,Desc,Amt\n"; (t==='monthly'?monthlyStats.transactions:[]).forEach(r=>c+=`${r.date},${r.type},"${r.desc}",${r.amount}\n`); const l=document.createElement('a'); l.href="data:text/csv;charset=utf-8,"+encodeURI(c); l.download=`report_${t}.csv`; l.click(); };
+            const handleTemplateDownload = () => { const l=document.createElement('a'); l.href="data:text/csv;charset=utf-8,"+encodeURI("Card,Name,Phone,Pending,Student,Class,Reg,Year\n101,Ali,98765,0,Fathima,5,A1,2024"); l.download="template.csv"; l.click(); };
+            const handleImport = (e) => { const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=async(ev)=>{ await processImport(ev.target.result); e.target.value=''; }; r.readAsText(f); } };
+            const processImport = async (csv) => { setImportLoading(true); try{ const l=csv.split('\n').slice(1); const m=new Map(); l.forEach(x=>{ const c=x.split(','); if(c.length>1){ const id=c[0].trim(); if(!m.has(id)) m.set(id,{familyRegNo:id, guardianName:c[1], phone:c[2], pendingBalance:c[3], students:[], payments:[]}); if(c[4]) m.get(id).students.push({id:generateId(), studentName:c[4], studentClass:c[5], regNo:c[6], year:c[7]}); } }); for(const d of m.values()){ const q=query(collection(db,'families'),where('familyRegNo','==',d.familyRegNo)); const s=await getDocs(q); if(s.empty) await addDoc(collection(db,'families'),{...d, createdAt:serverTimestamp()}); } alert("Imported!"); }catch(e){alert("Error");} setImportLoading(false); };
 
-            const handleDownloadImage = async () => {
-                const el = document.getElementById('receipt-print');
-                if (!el) return;
-                const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
-                const link = document.createElement('a'); link.download = `Receipt_${currentReceipt.receiptNo}.png`; link.href = canvas.toDataURL('image/png'); link.click();
-            };
-
-            // Loading / UI
-            if (errorMsg) return <div className="h-screen flex flex-col items-center justify-center bg-red-50 p-4"><AlertTriangle size={48} className="text-red-500 mb-4" /><h2 className="text-xl font-bold text-red-700 mb-2">Error</h2><p>{errorMsg}</p><button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-red-600 text-white rounded">Retry</button></div>;
-            if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-slate-50"><Activity className="animate-spin text-teal-600 mb-4" size={32} /><p className="text-slate-500 font-bold">Connecting...</p></div>;
+            if(loading) return <div className="h-[100dvh] flex items-center justify-center text-teal-600"><Activity className="animate-spin mr-2"/> Loading...</div>;
 
             return (
-                <div className="min-h-screen flex flex-col md:flex-row font-sans text-slate-700">
-
-                    {/* SIDEBAR */}
-                    <aside className="w-full md:w-64 bg-white border-r border-slate-200 flex-shrink-0 z-20 flex flex-col no-print md:h-screen md:sticky md:top-0">
-                        <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-                            <div className="w-10 h-10 bg-teal-400 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-teal-100">VS</div>
-                            <div><h1 className="font-bold text-lg leading-none">Varisanghya</h1><p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{madrsaName}</p></div>
+                <div className="flex flex-col h-[100dvh] bg-slate-50 text-slate-800 font-sans overflow-hidden">
+                    {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)}></div>}
+                    <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-[100dvh] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-3"><div className="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">VS</div><div><h1 className="font-bold text-lg leading-none">Varisanghya</h1><p className="text-xs text-slate-400 font-bold uppercase">{madrsaName}</p></div></div>
+                            <button onClick={()=>setIsSidebarOpen(false)} className="md:hidden text-slate-400"><X size={20}/></button>
                         </div>
-                        <nav className="p-4 space-y-2 flex-1">
-                            <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view === 'dashboard' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><LayoutGrid size={18} /> Dashboard</button>
-                            <button onClick={() => setView('home')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view === 'home' || view === 'details' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><Users size={18} /> Accounts</button>
-                            <button onClick={() => setView('add')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view === 'add' ? 'nav-active' : 'hover:bg-slate-50 text-slate-500'}`}><Plus size={18} /> New Family</button>
-                            <a href="admin.html" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition mt-8"><Home size={18} /> Back to Admin</a>
-                        </nav>
+                        <nav className="p-4 space-y-2 flex-1"><button onClick={()=>{setView('dashboard');setIsSidebarOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='dashboard'?'bg-teal-50 text-teal-700':'hover:bg-slate-50 text-slate-500'}`}><LayoutGrid size={18}/> Dashboard</button><button onClick={()=>{setView('home');setIsSidebarOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='home'||view==='details'?'bg-teal-50 text-teal-700':'hover:bg-slate-50 text-slate-500'}`}><Users size={18}/> Accounts</button><button onClick={()=>{setView('add');setIsSidebarOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${view==='add'?'bg-teal-50 text-teal-700':'hover:bg-slate-50 text-slate-500'}`}><Plus size={18}/> New Family</button><button onClick={()=>{setShowExpenseModal(true);setIsSidebarOpen(false)}} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition text-slate-500 hover:bg-slate-50`}><MinusCircle size={18}/> Add Expense</button><a href="admin.html" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition mt-8"><Home size={18}/> Admin</a></nav>
                     </aside>
 
-                    {/* MAIN CONTENT */}
-                    <main className="flex-1 bg-[#f8fafc] md:h-screen md:overflow-y-auto no-print w-full">
+                    <main className="flex-1 flex flex-col h-full w-full md:pl-64 relative">
+                        <header className="flex-shrink-0 bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center z-10 sticky top-0"><div className="flex items-center gap-3"><button className="md:hidden p-2 text-slate-600" onClick={() => setIsSidebarOpen(true)}><Menu size={24}/></button><h2 className="text-lg font-bold text-slate-800 brand-font flex items-center gap-2">{view === 'details' && <button onClick={()=>setView('home')}><ArrowLeft size={20}/></button>}{view==='dashboard'?'Overview':view==='home'?'Accounts':view==='add'?'Register':'Details'}</h2></div><div className="flex gap-2">{view === 'home' && <><input type="file" ref={fileInputRef} onChange={handleImport} className="hidden" accept=".csv" /><button onClick={() => fileInputRef.current.click()} disabled={importLoading} className="hidden md:flex bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold items-center gap-2"><Upload size={14}/> Import</button><button onClick={handleExport} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2"><Download size={14}/> <span className="hidden md:inline">Export</span></button></>}</div></header>
 
-                        <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center z-10">
-                            <h2 className="text-xl font-bold text-slate-800 brand-font">{view === 'dashboard' ? 'Overview' : view === 'home' ? 'Family Accounts' : view === 'add' ? 'Registration' : 'Account Details'}</h2>
-                            <div className="flex gap-2">
-                                {view === 'home' && (
-                                    <>
-                                        <input type="file" ref={fileInputRef} onChange={handleImport} className="hidden" accept=".csv" />
-                                        <button onClick={() => handleTemplateDownload()} className="bg-white border border-slate-200 text-teal-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-teal-50 flex items-center gap-2" title="Download Template"><FileText size={14} /></button>
-                                        <button onClick={() => fileInputRef.current.click()} disabled={importLoading} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-slate-50 flex items-center gap-2">{importLoading ? <Activity className="animate-spin" size={14} /> : <Upload size={14} />} Import</button>
-                                        <button onClick={handleExport} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-slate-50 flex items-center gap-2"><Download size={14} /> Export</button>
-                                    </>
-                                )}
-                            </div>
-                        </header>
-
-                        <div className="p-4 md:p-8 max-w-7xl mx-auto">
-
-                            {/* DASHBOARD VIEW */}
-                            {view === 'dashboard' && (
-                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                        <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-teal-400">
-                                            <div className="p-3 bg-teal-50 text-teal-600 rounded-xl"><IndianRupee /></div>
-                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Gross Income</p><h3 className="text-3xl font-black text-slate-700">₹{stats.rev.toLocaleString()}</h3></div>
-                                        </div>
-                                        <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-red-400">
-                                            <div className="p-3 bg-red-50 text-red-600 rounded-xl"><TrendingDown /></div>
-                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Total Expenses</p><h3 className="text-3xl font-black text-slate-700">₹{stats.expTotal.toLocaleString()}</h3></div>
-                                        </div>
-                                        <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-green-400">
-                                            <div className="p-3 bg-green-50 text-green-600 rounded-xl"><Wallet /></div>
-                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Net Balance</p><h3 className="text-3xl font-black text-slate-700">₹{stats.netBalance.toLocaleString()}</h3></div>
-                                        </div>
-                                        <div className="glass-panel p-6 rounded-2xl shadow-sm flex items-center gap-4 border-l-4 border-l-orange-400">
-                                            <div className="p-3 bg-orange-50 text-orange-600 rounded-xl"><History /></div>
-                                            <div><p className="text-xs font-bold text-slate-400 uppercase">Pending Due</p><h3 className="text-3xl font-black text-slate-700">₹{stats.pendingTotal.toLocaleString()}</h3></div>
-                                        </div>
-                                    </div>
-
-                                    {/* Monthly Reports Section */}
-                                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                                            <div className="flex items-center gap-4">
-                                                <h3 className="font-bold text-lg text-slate-700">Financial Overview</h3>
-                                                <input type="month" value={reportMonth} onChange={(e) => setReportMonth(e.target.value)} className="p-2 border rounded-lg text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-teal-200" />
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => handleDownloadReport('monthly')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50"><FileSpreadsheet size={16} /> Monthly Report</button>
-                                                <button onClick={() => handleDownloadReport('all')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg hover:bg-slate-900"><Download size={16} /> Overall Report</button>
-                                            </div>
-                                        </div>
-
-                                        {/* Monthly Stats Summary Row */}
-                                        <div className="grid grid-cols-3 border-b border-slate-100 text-center bg-white">
-                                            <div className="p-4 border-r border-slate-50">
-                                                <p className="text-xs font-bold text-slate-400 uppercase">Income ({reportMonth})</p>
-                                                <p className="text-xl font-black text-green-600">+ ₹{monthlyStats.income.toLocaleString()}</p>
-                                            </div>
-                                            <div className="p-4 border-r border-slate-50">
-                                                <p className="text-xs font-bold text-slate-400 uppercase">Expense ({reportMonth})</p>
-                                                <p className="text-xl font-black text-red-600">- ₹{monthlyStats.expense.toLocaleString()}</p>
-                                            </div>
-                                            <div className="p-4">
-                                                <p className="text-xs font-bold text-slate-400 uppercase">Net ({reportMonth})</p>
-                                                <p className={`text-xl font-black ${monthlyStats.net >= 0 ? 'text-teal-600' : 'text-red-600'}`}>₹{monthlyStats.net.toLocaleString()}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="p-4 flex justify-between items-center bg-slate-50/50">
-                                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ledger for {reportMonth}</h4>
-                                            <button onClick={() => setShowExpenseModal(true)} className="text-xs flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-bold hover:bg-red-200 transition"><MinusCircle size={14} /> Add Expense</button>
-                                        </div>
-
-                                        {monthlyStats.transactions.length === 0 ? <div className="p-10 text-center text-slate-400 italic">No records found for this month.</div> :
-                                            <table className="w-full text-sm text-left">
-                                                <thead className="bg-slate-50 text-slate-400 uppercase text-xs font-bold">
-                                                    <tr><th className="p-4">Date</th><th className="p-4">Description</th><th className="p-4">Type</th><th className="p-4 text-right">Amount</th><th className="p-4 text-center"></th></tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-50">
-                                                    {monthlyStats.transactions.map((t, i) => (
-                                                        <tr key={i} className="hover:bg-slate-50">
-                                                            <td className="p-4 text-slate-500 font-mono text-xs">{t.date}</td>
-                                                            <td className="p-4 font-bold text-slate-700">{t.desc}</td>
-                                                            <td className="p-4"><span className={`px-2 py-1 rounded text-xs font-bold ${t.isExpense ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{t.type}</span></td>
-                                                            <td className={`p-4 text-right font-bold ${t.isExpense ? 'text-red-600' : 'text-green-600'}`}>₹{t.amount}</td>
-                                                            <td className="p-4 text-center">
-                                                                {t.isExpense && <button onClick={() => handleDeleteExpense(t.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ACCOUNTS LIST VIEW */}
-                            {view === 'home' && (
-                                <div className="space-y-6 animate-in fade-in">
-                                    <div className="flex gap-4 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
-                                        <div className="flex-1 flex items-center px-4 gap-3">
-                                            <Search className="text-slate-400" size={20} />
-                                            <input className="w-full py-2 outline-none font-medium text-slate-600 placeholder:text-slate-300" placeholder="Search by Name, Card No or Student..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {filteredFamilies.map(f => (
-                                            <div key={f.id} onClick={() => { setSelectedFamily(f); setView('details'); }}
-                                                className="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg hover:border-teal-200 transition cursor-pointer relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-[100px] -mr-4 -mt-4 transition group-hover:bg-teal-100"></div>
-                                                <div className="relative z-10">
-                                                    <div className="flex justify-between items-start mb-4">
-                                                        <span className="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-md shadow-slate-200">#{f.familyRegNo}</span>
-                                                        <div className="flex flex-col items-end">
-                                                            <span className="text-xs font-bold text-teal-600 bg-white px-2 py-1 rounded-full border border-teal-100 mb-1">{f.students?.length || 0} Kids</span>
-                                                            {Number(f.pendingBalance) > 0 && <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full border border-red-100">Due: ₹{f.pendingBalance}</span>}
-                                                        </div>
-                                                    </div>
-                                                    <h3 className="font-bold text-lg text-slate-800 truncate mb-1">{f.guardianName}</h3>
-                                                    <p className="text-xs text-slate-400 font-mono mb-4">{f.phone || 'No Phone'}</p>
-
-                                                    <div className="space-y-2">
-                                                        {f.students?.slice(0, 2).map(s => (
-                                                            <div key={s.id} className="flex justify-between items-center text-xs bg-slate-50 p-2 rounded-lg group-hover:bg-white transition">
-                                                                <span className="font-bold text-slate-600">{s.studentName}</span>
-                                                                <span className="text-slate-400">{s.regNo}</span>
-                                                            </div>
-                                                        ))}
-                                                        {f.students?.length > 2 && <div className="text-xs text-center text-slate-400 font-bold">+ {f.students.length - 2} more</div>}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {filteredFamilies.length === 0 && <div className="text-center py-20 text-slate-400 italic">No accounts found matching your search.</div>}
-                                </div>
-                            )}
-
-                            {/* ADD NEW FAMILY VIEW */}
-                            {view === 'add' && (
-                                <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-8">
-                                    <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 relative overflow-hidden">
-                                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-blue-500"></div>
-                                        <div className="flex justify-between items-center mb-8">
-                                            <h2 className="text-2xl font-bold text-slate-800">New Registration</h2>
-                                            <button onClick={() => setView('dashboard')} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-500 transition"><X size={18} /></button>
-                                        </div>
-
-                                        <form onSubmit={handleCreateFamily} className="space-y-6">
-                                            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                                                <h3 className="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center gap-2"><User size={14} /> Guardian Info</h3>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <input required name="guardianName" placeholder="Guardian Name" className="col-span-2 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 font-bold text-slate-700" />
-                                                    <input required name="familyRegNo" placeholder="Card Number" className="p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200" />
-                                                    <input name="phone" placeholder="Phone Number" className="p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200" />
-                                                    <div className="col-span-2 mt-2">
-                                                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Previous Pending Balance (Optional)</label>
-                                                        <input name="pendingBalance" type="number" placeholder="Amount (₹)" className="w-full p-3 border border-red-200 bg-red-50 rounded-xl outline-none focus:ring-2 focus:ring-red-200 font-bold text-red-600" />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="p-5 bg-teal-50/50 rounded-2xl border border-teal-100">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <h3 className="text-xs font-bold text-teal-600 uppercase flex items-center gap-2"><UserPlus size={14} /> Students</h3>
-                                                    <button type="button" onClick={() => setCreateStudentsList([...createStudentsList, { studentName: '', regNo: '', year: '', studentClass: '' }])} className="text-xs text-teal-700 font-bold bg-white px-2 py-1 rounded shadow-sm hover:bg-teal-100 transition">+ Add Row</button>
-                                                </div>
-
-                                                <div className="space-y-3">
-                                                    {createStudentsList.map((s, i) => (
-                                                        <div key={i} className="flex gap-2">
-                                                            <input placeholder="Name" className="flex-1 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.studentName} onChange={e => { const l = [...createStudentsList]; l[i].studentName = e.target.value; setCreateStudentsList(l) }} />
-                                                            <select className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.studentClass} onChange={e => { const l = [...createStudentsList]; l[i].studentClass = e.target.value; setCreateStudentsList(l) }}>
-                                                                <option value="">Class</option>
-                                                                {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
-                                                            </select>
-                                                            <input placeholder="Reg" className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.regNo} onChange={e => { const l = [...createStudentsList]; l[i].regNo = e.target.value; setCreateStudentsList(l) }} />
-                                                            <input placeholder="Year" className="w-20 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-teal-200 bg-white" value={s.year} onChange={e => { const l = [...createStudentsList]; l[i].year = e.target.value; setCreateStudentsList(l) }} />
-                                                            {createStudentsList.length > 1 && <button type="button" onClick={() => { const l = [...createStudentsList]; l.splice(i, 1); setCreateStudentsList(l) }} className="text-red-400 hover:text-red-600"><MinusCircle size={20} /></button>}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <button className="w-full py-4 bg-slate-800 text-white rounded-xl font-bold text-lg hover:bg-slate-900 shadow-lg shadow-slate-200 transition transform active:scale-95">Create Family Account</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
-
-                            {view === 'details' && selectedFamily && (
-                                <div className="animate-in slide-in-from-right-8 h-full flex flex-col">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <button onClick={() => setView('home')} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-bold transition"><ChevronRight className="rotate-180" size={20} /> Back to List</button>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => setEditFamilyMode(!editFamilyMode)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"><Edit2 size={18} /></button>
-                                            <button onClick={handleDeleteFamily} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"><Trash2 size={18} /></button>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid lg:grid-cols-12 gap-6 flex-1 items-start">
-                                        {/* LEFT COL: FAMILY & STUDENT LIST */}
-                                        <div className="lg:col-span-4 space-y-6">
-                                            {/* Family Card */}
-                                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-100 to-transparent rounded-bl-[100px] -mr-8 -mt-8"></div>
-
-                                                {!editFamilyMode ? (
-                                                    <>
-                                                        <h2 className="text-2xl font-bold text-slate-800 relative z-10">{selectedFamily.guardianName}</h2>
-                                                        <div className="flex flex-col gap-2 mt-2 mb-4 relative z-10">
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-bold font-mono">#{selectedFamily.familyRegNo}</span>
-                                                                <span className="text-sm text-slate-500"><i className="fas fa-phone text-xs mr-1"></i> {selectedFamily.phone}</span>
-                                                            </div>
-                                                            {Number(selectedFamily.pendingBalance) > 0 ? (
-                                                                <div className="flex items-center gap-2 bg-red-50 p-2 rounded-lg border border-red-100 w-fit">
-                                                                    <History size={14} className="text-red-500" />
-                                                                    <span className="text-xs font-bold text-red-600">Prev. Pending: ₹{selectedFamily.pendingBalance}</span>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="flex items-center gap-2 bg-green-50 p-2 rounded-lg border border-green-100 w-fit opacity-70">
-                                                                    <History size={14} className="text-green-500" />
-                                                                    <span className="text-xs font-bold text-green-600">No Previous Dues</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <form onSubmit={handleUpdateFamily} className="mb-4 relative z-10 space-y-2">
-                                                        <input name="gName" defaultValue={selectedFamily.guardianName} className="w-full p-2 border rounded text-sm font-bold" />
-                                                        <div className="flex gap-2">
-                                                            <input name="cNo" defaultValue={selectedFamily.familyRegNo} className="w-1/2 p-2 border rounded text-sm" />
-                                                            <input name="phone" defaultValue={selectedFamily.phone} className="w-1/2 p-2 border rounded text-sm" />
-                                                        </div>
-                                                        <div className="pt-2">
-                                                            <label className="text-[10px] uppercase font-bold text-slate-400">Previous Pending</label>
-                                                            <input name="pBal" type="number" defaultValue={selectedFamily.pendingBalance} className="w-full p-2 border border-red-200 rounded text-sm font-bold text-red-600 bg-red-50" placeholder="0" />
-                                                        </div>
-                                                        <button className="w-full bg-blue-600 text-white py-1 rounded text-xs font-bold mt-2">Save Changes</button>
-                                                    </form>
-                                                )}
-
-                                                {/* Student List with Edit Option */}
-                                                <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                                                    <p className="text-xs font-bold text-slate-400 uppercase mb-2">Children</p>
-                                                    {selectedFamily.students?.map(s => {
-                                                        const isEditing = editingStudentId === s.id;
-                                                        return (
-                                                            <div key={s.id} className="p-3 rounded-xl bg-slate-50 border border-transparent hover:border-teal-200 transition">
-                                                                {!isEditing ? (
-                                                                    <div className="flex justify-between items-center">
-                                                                        <div>
-                                                                            <h4 className="font-bold text-sm text-slate-700">{s.studentName}</h4>
-                                                                            <p className="text-xs text-slate-400">Class: {s.studentClass || '-'} • {s.regNo || 'No Reg'}</p>
-                                                                        </div>
-                                                                        <div className="flex gap-2">
-                                                                            <button onClick={() => setEditingStudentId(s.id)} className="text-blue-400 hover:text-blue-600"><Edit2 size={14} /></button>
-                                                                            <button onClick={() => handleDeleteStudent(s.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
-                                                                        </div>
-                                                                    </div>
-                                                                ) : (
-                                                                    <form onSubmit={handleEditStudent} className="flex flex-col gap-2">
-                                                                        <input name="sName" defaultValue={s.studentName} className="p-1 text-sm border rounded" />
-                                                                        <div className="flex gap-1">
-                                                                            <select name="sClass" defaultValue={s.studentClass} className="w-1/3 p-1 text-xs border rounded bg-white">
-                                                                                <option value="">Class</option>
-                                                                                {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
-                                                                            </select>
-                                                                            <input name="sReg" defaultValue={s.regNo} className="w-1/3 p-1 text-xs border rounded" />
-                                                                            <input name="sYear" defaultValue={s.year} className="w-1/3 p-1 text-xs border rounded" />
-                                                                        </div>
-                                                                        <div className="flex gap-2">
-                                                                            <button className="bg-teal-600 text-white text-xs px-2 py-1 rounded flex-1">Save</button>
-                                                                            <button type="button" onClick={() => setEditingStudentId(null)} className="bg-gray-300 text-xs px-2 py-1 rounded">Cancel</button>
-                                                                        </div>
-                                                                    </form>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-
-                                                {/* Add Student Form */}
-                                                <div className="mt-6 pt-4 border-t border-slate-100">
-                                                    <form onSubmit={handleAddStudent} className="flex flex-col gap-2">
-                                                        <input name="sName" placeholder="New Child Name" required className="p-2 text-sm border rounded-lg outline-none focus:border-teal-400" />
-                                                        <div className="flex gap-2">
-                                                            <select name="sClass" required className="w-1/3 p-2 text-sm border rounded-lg outline-none focus:border-teal-400 bg-white">
-                                                                <option value="">Class</option>
-                                                                {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
-                                                            </select>
-                                                            <input name="sReg" placeholder="Reg No" className="w-1/3 p-2 text-sm border rounded-lg outline-none focus:border-teal-400" />
-                                                            <button className="w-1/3 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition">Add</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* RIGHT COL: PAYMENT INTERFACE & HISTORY */}
-                                        <div className="lg:col-span-8">
-                                            <div className="space-y-6 animate-in fade-in">
-
-                                                {/* Family Financial Header */}
-                                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-teal-100 flex items-center justify-between">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 text-xl font-bold uppercase"><Wallet /></div>
-                                                        <div>
-                                                            <h2 className="text-xl font-bold text-slate-800">Family Account</h2>
-                                                            <p className="text-xs text-slate-500 font-bold uppercase">Total Payments: {(selectedFamily.payments?.length) || 0}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Payment Form */}
-                                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                                                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><CreditCard size={18} /> Record Payment</h3>
-                                                    <form onSubmit={handlePayment} className="grid grid-cols-4 gap-3 items-end">
-                                                        <div className="col-span-2">
-                                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Month</label>
-                                                            <select name="mon" className="w-full p-2.5 border rounded-lg bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100">
-                                                                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(m => <option key={m}>{m}</option>)}
-                                                            </select>
-                                                        </div>
-                                                        <div className="col-span-2 md:col-span-1">
-                                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Amount</label>
-                                                            <input name="amt" type="number" required placeholder="₹" className="w-full p-2.5 border rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100" />
-                                                        </div>
-                                                        <div className="col-span-2 md:col-span-1">
-                                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Rec No</label>
-                                                            <input name="rec" required placeholder="#" className="w-full p-2.5 border rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-teal-100" />
-                                                        </div>
-                                                        <input type="hidden" name="date" value={new Date().toISOString().split('T')[0]} />
-                                                        <button className="col-span-4 md:col-span-4 bg-teal-500 text-white p-2.5 rounded-lg font-bold text-sm hover:bg-teal-600 shadow-md transition flex justify-center items-center gap-2"><CreditCard size={16} /> Pay Now</button>
-                                                    </form>
-                                                </div>
-
-                                                {/* History Table */}
-                                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                                    <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                                                        <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider">Payment History</h4>
-                                                    </div>
-                                                    <table className="w-full text-sm text-left">
-                                                        <thead className="bg-white text-slate-400 font-bold text-xs uppercase">
-                                                            <tr><th className="p-4">Date</th><th className="p-4">Rec #</th><th className="p-4">Month</th><th className="p-4 text-right">Amt</th><th className="p-4 text-center">Act</th></tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-slate-50">
-                                                            {selectedFamily.payments?.slice().reverse().map((p, i) => (
-                                                                <tr key={i} className="hover:bg-slate-50 transition group">
-                                                                    <td className="p-4 text-slate-500 font-mono text-xs">{p.date}</td>
-                                                                    <td className="p-4 font-bold text-slate-700">{p.receiptNo}</td>
-                                                                    <td className="p-4"><span className="bg-teal-50 text-teal-700 px-2 py-1 rounded text-xs font-bold">{p.month}</span></td>
-                                                                    <td className="p-4 text-right font-bold text-slate-800">₹{p.amount}</td>
-                                                                    <td className="p-4 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
-                                                                        <button onClick={() => { setCurrentReceipt({ ...p, studentNames: (selectedFamily.students?.map(s => s.studentName).join(', ') || 'N/A'), guardianName: selectedFamily.guardianName, familyRegNo: selectedFamily.familyRegNo, pendingBalance: selectedFamily.pendingBalance, month: p.month }); setShowReceipt(true); }} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded"><Printer size={16} /></button>
-                                                                        <button onClick={() => handleDeletePayment(p.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 size={16} /></button>
-                                                                        <button onClick={() => handleWhatsAppShare(p, selectedFamily.phone)} className="text-green-500 hover:bg-green-50 p-1.5 rounded"><MessageCircle size={16} /></button>
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                            {(!selectedFamily.payments || selectedFamily.payments.length === 0) && <tr><td colSpan="6" className="p-8 text-center text-slate-400 italic">No payment history found for this family.</td></tr>}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                        <div className="flex-1 overflow-y-auto p-4 pb-24 md:p-8 md:pb-8">
+                            {view === 'dashboard' && <div className="space-y-6 animate-in fade-in"><div className="flex bg-slate-200 p-1 rounded-lg w-fit mx-auto md:mx-0"><button onClick={()=>setDashboardMode('month')} className={`px-4 py-1 rounded-md text-sm font-bold transition ${dashboardMode==='month'?'bg-white shadow text-teal-700':'text-slate-500'}`}>Month</button><button onClick={()=>setDashboardMode('year')} className={`px-4 py-1 rounded-md text-sm font-bold transition ${dashboardMode==='year'?'bg-white shadow text-teal-700':'text-slate-500'}`}>Year</button></div><div className="grid grid-cols-2 lg:grid-cols-4 gap-3"><div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Income</p><h3 className="text-xl font-black text-slate-800">₹{stats.rev.toLocaleString()}</h3></div><div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Expense</p><h3 className="text-xl font-black text-slate-800">₹{stats.expTotal.toLocaleString()}</h3></div><div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Net</p><h3 className={`text-xl font-black ${stats.netBalance>=0?'text-teal-600':'text-red-600'}`}>₹{stats.netBalance.toLocaleString()}</h3></div><div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-xs font-bold text-slate-400 uppercase mb-1">Pending</p><h3 className="text-xl font-black text-slate-800">₹{stats.pendingTotal.toLocaleString()}</h3></div></div><div className="bg-teal-600 text-white p-4 rounded-2xl shadow-lg flex justify-between items-center cursor-pointer active:scale-95 transition" onClick={()=>setShowExpenseModal(true)}><span className="font-bold">Add Expense</span><div className="bg-white/20 p-2 rounded-lg"><MinusCircle size={20}/></div></div></div>}
+                            {view === 'home' && <div className="space-y-4 animate-in fade-in"><div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar"><button onClick={()=>setHomeFilter('all')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border ${homeFilter==='all'?'bg-slate-800 text-white border-slate-800':'bg-white text-slate-600 border-slate-200'}`}>All</button><button onClick={()=>setHomeFilter('due')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border ${homeFilter==='due'?'bg-red-50 text-red-600 border-red-200':'bg-white text-slate-600 border-slate-200'}`}>Pending</button></div><div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex items-center px-3 gap-2"><Search className="text-slate-400" size={18} /><input className="w-full py-2 outline-none text-sm font-medium text-slate-600 placeholder:text-slate-300 bg-transparent" placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div><div className="space-y-3">{filteredFamilies.map(f => <div key={f.id} onClick={() => { setSelectedFamily(f); setView('details'); }} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 active:scale-95 transition-transform"><div className="flex justify-between items-start mb-2"><span className="bg-slate-800 text-white px-2 py-0.5 rounded text-xs font-bold">#{f.familyRegNo}</span><div className="flex items-center gap-2">{Number(f.pendingBalance) > 0 && <button onClick={(e)=>{e.stopPropagation();handleWhatsAppReminder(f)}} className="p-1.5 bg-red-100 text-red-600 rounded-full animate-pulse"><Bell size={12}/></button>}{Number(f.pendingBalance) > 0 && <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">₹{f.pendingBalance}</span>}</div></div><h3 className="font-bold text-base text-slate-800">{f.guardianName}</h3><p className="text-xs text-slate-400 mt-1">{f.students?.map(s=>`${s.studentName} (${s.studentClass})`).join(', ') || 'No Students'}</p></div>)}{filteredFamilies.length === 0 && <div className="text-center py-20 text-slate-400 italic text-sm">No accounts found.</div>}</div></div>}
+                            {view === 'add' && <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 animate-in slide-in-from-bottom-8"><h2 className="text-xl font-bold text-slate-800 mb-6">New Family</h2><form onSubmit={handleCreateFamily} className="space-y-4"><div className="space-y-3"><input required name="guardianName" placeholder="Guardian Name" className="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-200" /><div className="flex gap-2"><input required name="familyRegNo" placeholder="Card No" className="w-1/2 p-3 border rounded-xl bg-slate-50 text-sm outline-none" /><input name="phone" placeholder="Phone" className="w-1/2 p-3 border rounded-xl bg-slate-50 text-sm outline-none" /></div><input name="pendingBalance" type="number" placeholder="Pending Balance (Opt)" className="w-full p-3 border border-red-100 bg-red-50 text-sm outline-none text-red-600 font-bold rounded-xl" /></div><div className="pt-4 border-t border-slate-100"><div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-slate-400 uppercase">Student</span><button type="button" onClick={() => setCreateStudentsList([...createStudentsList, { studentName: '', regNo: '', year: '', studentClass: '' }])} className="text-xs text-teal-700 font-bold">+ Add</button></div>{createStudentsList.map((s, i) => <div key={i} className="flex gap-2 mb-2"><input placeholder="Name" className="flex-1 p-2 border rounded-lg text-sm" value={s.studentName} onChange={e => {const l=[...createStudentsList]; l[i].studentName=e.target.value; setCreateStudentsList(l)}} /><input placeholder="Cls" className="w-12 p-2 border rounded-lg text-sm" value={s.studentClass} onChange={e => {const l=[...createStudentsList]; l[i].studentClass=e.target.value; setCreateStudentsList(l)}} /></div>)}</div><button className="w-full py-3.5 bg-teal-600 text-white rounded-xl font-bold shadow-lg shadow-teal-200">Create Account</button></form></div>}
+                            {view === 'details' && selectedFamily && <div className="space-y-6 animate-in slide-in-from-right-4"><div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><div className="flex justify-between items-start mb-4"><div><h2 className="text-xl font-bold text-slate-800">{selectedFamily.guardianName}</h2><span className="text-xs text-slate-400 font-mono">#{selectedFamily.familyRegNo}</span></div><div className="flex gap-2"><button onClick={()=>setEditFamilyMode(!editFamilyMode)} className="p-2 bg-blue-50 text-blue-500 rounded-lg"><Edit2 size={16}/></button><button onClick={handleDeleteFamily} className="p-2 bg-red-50 text-red-500 rounded-lg"><Trash2 size={16}/></button></div></div>{!editFamilyMode ? <div className="flex flex-col gap-2 bg-slate-50 p-3 rounded-xl mb-4">{selectedFamily.students?.map(s => <div key={s.id} className="text-sm font-bold text-slate-600 flex justify-between"><span>{s.studentName}</span> <span className="text-xs bg-white px-2 rounded border">Cls {s.studentClass}</span></div>)}<div className="border-t border-slate-200 pt-2 mt-1"><form onSubmit={handleAddStudent} className="flex gap-2"><input name="sName" placeholder="New Child" className="flex-1 p-1.5 text-xs border rounded" required /><input name="sClass" placeholder="Cls" className="w-12 p-1.5 text-xs border rounded" required /><button className="bg-slate-800 text-white px-3 rounded text-xs font-bold">Add</button></form></div></div> : <form onSubmit={handleUpdateFamily} className="mb-4 space-y-2 bg-slate-50 p-3 rounded-xl"><input name="gName" defaultValue={selectedFamily.guardianName} className="w-full p-2 border rounded text-sm" /><div className="flex gap-2"><input name="cNo" defaultValue={selectedFamily.familyRegNo} className="w-1/2 p-2 border rounded text-sm" /><input name="phone" defaultValue={selectedFamily.phone} className="w-1/2 p-2 border rounded text-sm" /></div><div className="pt-2"><label className="text-[10px] font-bold text-red-500 uppercase">Pending Due</label><input name="pBal" type="number" defaultValue={selectedFamily.pendingBalance} className="w-full p-2 border border-red-200 rounded text-sm font-bold text-red-600" /></div><button className="w-full bg-blue-600 text-white py-2 rounded text-xs font-bold">Save Changes</button></form>}<button onClick={()=>{setEditingPayment(null); setShowPaymentModal(true)}} className="w-full py-3 bg-teal-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"><CreditCard size={18}/> Pay Now</button><div className="mt-6"><h4 className="text-xs font-bold text-slate-400 uppercase mb-3">History</h4><div className="space-y-2">{selectedFamily.payments?.slice().reverse().map((p, i) => <div key={i} className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm"><div><p className="font-bold text-sm text-slate-700">₹{p.amount}</p><p className="text-xs text-slate-400">{p.month} • {p.date}</p></div><div className="flex gap-2"><button onClick={() => { setCurrentReceipt({...p, studentNames:(selectedFamily.students?.map(s=>s.studentName).join(', ')||'N/A'), guardianName:selectedFamily.guardianName, familyRegNo:selectedFamily.familyRegNo, pendingBalance:selectedFamily.pendingBalance, month:p.month});setShowReceipt(true);}} className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Printer size={16}/></button><button onClick={() => openEditPayment(p)} className="p-2 bg-slate-100 text-slate-600 rounded-lg"><Edit2 size={16}/></button></div></div>)}</div></div></div></div>}
                         </div>
                     </main>
 
-                    {/* RECEIPT MODAL */}
-                    {showReceipt && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print animate-in fade-in">
-                            <div className="bg-white w-full max-w-xl rounded-sm shadow-2xl overflow-hidden transform scale-100 transition">
-
-                                <div className="bg-slate-800 p-4 flex justify-between items-center text-white border-b border-slate-700">
-                                    <h3 className="font-bold tracking-wide flex items-center gap-2"><i className="fas fa-print"></i> Print Receipt</h3>
-                                    <button onClick={() => setShowReceipt(false)} className="hover:bg-slate-700 p-1 rounded transition"><X size={20} /></button>
-                                </div>
-
-                                <div id="receipt-print" className="bg-white p-8 text-slate-800 relative">
-                                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-600 via-slate-800 to-teal-600"></div>
-
-                                    <div className="flex justify-between items-start border-b-2 border-slate-100 pb-6 mb-6">
-                                        <div className="flex gap-4">
-                                            <div className="w-14 h-14 bg-slate-900 text-white flex items-center justify-center text-2xl font-serif font-bold rounded shadow-md">
-                                                {madrsaName.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <h1 className="text-2xl font-serif font-bold text-slate-900 uppercase tracking-wide leading-none">{madrsaName}</h1>
-                                                <p className="text-xs text-slate-500 font-medium mt-1 uppercase tracking-wider">Educational Institution</p>
-                                                <p className="text-[10px] text-slate-400 mt-0.5">Kerala, India</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-sm font-bold text-teal-600 uppercase tracking-widest border border-teal-600 px-2 py-0.5 rounded inline-block mb-1">Receipt</div>
-                                            <p className="text-2xl font-mono font-bold text-slate-800">#{currentReceipt.receiptNo}</p>
-                                            <p className="text-xs text-slate-400">Date: {currentReceipt.date}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-8 mb-8">
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Received From</p>
-                                            <h3 className="text-lg font-bold text-slate-800">{currentReceipt.guardianName}</h3>
-                                            <p className="text-xs text-slate-500">Family ID: <span className="font-mono font-bold">{currentReceipt.familyRegNo}</span></p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payment Month</p>
-                                            <h3 className="text-lg font-bold text-teal-700 capitalize">{currentReceipt.month}</h3>
-                                            <p className="text-xs text-slate-500">Academic Year: {new Date().getFullYear()}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-slate-200 rounded-lg overflow-hidden mb-8">
-                                        <table className="w-full text-sm">
-                                            <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                                                <tr>
-                                                    <th className="px-4 py-3 text-left border-b border-slate-200">Description</th>
-                                                    <th className="px-4 py-3 text-right border-b border-slate-200">Amount</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                <tr>
-                                                    <td className="px-4 py-3">
-                                                        <p className="font-bold text-slate-700">Varisanghya / Subscription</p>
-                                                        <p className="text-xs text-slate-500 mt-0.5">Students: <span className="italic">{currentReceipt.studentNames}</span></p>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">₹{currentReceipt.amount}</td>
-                                                </tr>
-                                                {Number(currentReceipt.pendingBalance) > 0 && (
-                                                    <tr>
-                                                        <td className="px-4 py-2 text-xs text-red-500 italic">Previous Pending Balance (Due)</td>
-                                                        <td className="px-4 py-2 text-right text-xs font-mono text-red-500">₹{currentReceipt.pendingBalance}</td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                            <tfoot className="bg-slate-900 text-white">
-                                                <tr>
-                                                    <td className="px-4 py-3 text-right font-bold uppercase text-xs">Total Received</td>
-                                                    <td className="px-4 py-3 text-right font-bold text-lg">₹{currentReceipt.amount}</td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-
-                                    <div className="flex justify-between items-end mt-12 pt-4 border-t border-slate-100">
-                                        <div className="text-[10px] text-slate-400">
-                                            <p>Thank you for your support.</p>
-                                            <p>This is a computer-generated receipt.</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="font-serif text-xl text-slate-800 mb-1 font-bold" style={{ fontFamily: 'cursive' }}>Authorized</div>
-                                            <div className="h-px w-32 bg-slate-300"></div>
-                                            <p className="text-[9px] uppercase font-bold text-slate-400 mt-1 tracking-widest">Signatory</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
-                                        <i className="fas fa-university text-9xl text-slate-900"></i>
-                                    </div>
-                                </div>
-
-                                <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-3">
-                                    <button onClick={() => handleWhatsAppShare(currentReceipt, selectedFamily.phone)} className="flex-1 py-2.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 shadow-md flex items-center justify-center gap-2 transition"><i className="fab fa-whatsapp text-lg"></i> Share</button>
-                                    <button onClick={handleDownloadImage} className="flex-1 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50 shadow-sm flex items-center justify-center gap-2 transition"><i className="fas fa-download"></i> Save Image</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* EXPENSE MODAL */}
-                    {showExpenseModal && (
-                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-                                <h3 className="font-bold text-lg mb-4">Add Expense</h3>
-                                <form onSubmit={handleAddExpense} className="space-y-3">
-                                    <input name="desc" placeholder="Description (e.g. Electricity Bill)" required className="w-full p-2 border rounded" />
-                                    <input name="amount" type="number" placeholder="Amount (₹)" required className="w-full p-2 border rounded" />
-                                    <select name="cat" className="w-full p-2 border rounded bg-white"><option>Utilities</option><option>Maintenance</option><option>Salary</option><option>Other</option></select>
-                                    <input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full p-2 border rounded" />
-                                    <div className="flex gap-2 pt-2">
-                                        <button className="flex-1 bg-red-600 text-white py-2 rounded font-bold">Add</button>
-                                        <button type="button" onClick={() => setShowExpenseModal(false)} className="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
+                    {showReceipt && <div className="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4"><div className="bg-white w-full max-w-sm rounded-xl overflow-hidden animate-in zoom-in-95 duration-200"><div id="receipt-print" className="p-6 bg-white text-slate-800 text-sm relative"><div className="text-center border-b-2 border-slate-800 pb-4 mb-4"><h2 className="text-xl font-black uppercase tracking-widest">{madrsaName}</h2><p className="text-[10px] font-bold text-slate-400 uppercase">Payment Receipt</p></div><div className="grid grid-cols-2 gap-4 text-xs mb-4"><div><span className="text-slate-400 block">Date</span><span className="font-bold">{currentReceipt.date}</span></div><div className="text-right"><span className="text-slate-400 block">No</span><span className="font-bold">#{currentReceipt.receiptNo}</span></div></div><div className="bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4 space-y-1 text-xs"><div className="flex justify-between"><span className="text-slate-400">ID</span><span className="font-bold">{currentReceipt.familyRegNo}</span></div><div className="flex justify-between"><span className="text-slate-400">Name</span><span className="font-bold truncate max-w-[120px]">{currentReceipt.guardianName}</span></div><div className="flex justify-between pt-1 border-t border-slate-200 mt-1"><span className="text-slate-400">Students</span><span className="font-bold text-right truncate max-w-[120px]">{currentReceipt.studentNames}</span></div><div className="flex justify-between"><span className="text-slate-400">Month</span><span className="font-bold">{currentReceipt.month}</span></div>{Number(currentReceipt.pendingBalance) > 0 && <div className="flex justify-between text-red-500 font-bold pt-1"><span>Due</span><span>₹{currentReceipt.pendingBalance}</span></div>}</div><div className="flex justify-between items-center text-lg font-black border-t-2 border-slate-800 pt-2"><span>Total</span><span>₹{currentReceipt.amount}</span></div></div><div className="p-3 bg-slate-100 flex gap-2"><button onClick={() => setShowReceipt(false)} className="flex-1 py-3 text-slate-500 font-bold rounded-lg bg-white">Close</button><button onClick={() => handleWhatsAppShare(currentReceipt, selectedFamily.phone)} className="flex-1 py-3 bg-green-500 text-white font-bold rounded-lg flex items-center justify-center gap-2"><MessageCircle size={18}/> Share</button></div></div></div>}
+                    
+                    {(showPaymentModal || showExpenseModal) && <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"><div className="bg-white w-full max-w-sm rounded-2xl p-6 animate-in slide-in-from-bottom-10"><h3 className="font-bold text-lg mb-4">{showPaymentModal ? (editingPayment ? 'Edit Payment' : 'New Payment') : 'Add Expense'}</h3><form onSubmit={showPaymentModal ? handlePayment : handleAddExpense} className="space-y-3">{showPaymentModal ? <><select name="mon" defaultValue={editingPayment?.month} className="w-full p-3 border rounded-xl bg-white text-sm font-bold">{['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map(m=><option key={m}>{m}</option>)}</select><input name="amt" type="number" defaultValue={editingPayment?.amount} required placeholder="Amount (₹)" className="w-full p-3 border rounded-xl text-sm" /><input name="rec" defaultValue={editingPayment?.receiptNo} required placeholder="Rec No" className="w-full p-3 border rounded-xl text-sm" /><input name="date" type="date" defaultValue={editingPayment?.date || new Date().toISOString().split('T')[0]} className="w-full p-3 border rounded-xl text-sm" /></> : <><input name="desc" placeholder="Desc" required className="w-full p-3 border rounded-xl text-sm"/><input name="amount" type="number" placeholder="₹" required className="w-full p-3 border rounded-xl text-sm"/><input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full p-3 border rounded-xl text-sm"/></>}<div className="flex gap-2 pt-2"><button className="flex-1 bg-teal-600 text-white py-3 rounded-xl font-bold">Save</button><button type="button" onClick={()=>{setShowPaymentModal(false);setShowExpenseModal(false);setEditingPayment(null)}} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold text-slate-500">Cancel</button></div></form></div></div>}
                 </div>
             );
         }
@@ -1205,5 +285,4 @@
         root.render(<VarisanghyaApp />);
     </script>
 </body>
-
 </html>
